@@ -22,4 +22,8 @@ out
 *.iml
 .idea/
 
+*~
+cscope*
+.cscope*
+
 tests/src/test/java/com/orientechnologies/orient/test/database/auto/_*.xml

@@ -68,55 +68,57 @@ public interface OrientSqlTreeConstants
   public int JJTMETADATAIDENTIFIER = 62;
   public int JJTINDEXIDENTIFIER = 63;
   public int JJTWHERECLAUSE = 64;
-  public int JJTORBLOCK = 65;
-  public int JJTANDBLOCK = 66;
-  public int JJTNOTBLOCK = 67;
-  public int JJTPARENTHESISBLOCK = 68;
-  public int JJTCONDITIONBLOCK = 69;
-  public int JJTCOMPAREOPERATOR = 70;
-  public int JJTLTOPERATOR = 71;
-  public int JJTGTOPERATOR = 72;
-  public int JJTNEOPERATOR = 73;
-  public int JJTNEQOPERATOR = 74;
-  public int JJTGEOPERATOR = 75;
-  public int JJTLEOPERATOR = 76;
-  public int JJTLIKEOPERATOR = 77;
-  public int JJTLUCENEOPERATOR = 78;
-  public int JJTNEAROPERATOR = 79;
-  public int JJTWITHINOPERATOR = 80;
-  public int JJTCONTAINSKEYOPERATOR = 81;
-  public int JJTCONTAINSVALUEOPERATOR = 82;
-  public int JJTEQUALSCOMPAREOPERATOR = 83;
-  public int JJTBINARYCONDITION = 84;
-  public int JJTCONTAINSVALUECONDITION = 85;
-  public int JJTINSTANCEOFCONDITION = 86;
-  public int JJTINDEXMATCHCONDITION = 87;
-  public int JJTBETWEENCONDITION = 88;
-  public int JJTISNULLCONDITION = 89;
-  public int JJTISNOTNULLCONDITION = 90;
-  public int JJTISDEFINEDCONDITION = 91;
-  public int JJTISNOTDEFINEDCONDITION = 92;
-  public int JJTCONTAINSCONDITION = 93;
-  public int JJTINOPERATOR = 94;
-  public int JJTINCONDITION = 95;
-  public int JJTNOTINCONDITION = 96;
-  public int JJTCONTAINSALLCONDITION = 97;
-  public int JJTCONTAINSTEXTCONDITION = 98;
-  public int JJTMATCHESCONDITION = 99;
-  public int JJTORDERBY = 100;
-  public int JJTGROUPBY = 101;
-  public int JJTUNWIND = 102;
-  public int JJTLIMIT = 103;
-  public int JJTSKIP = 104;
-  public int JJTTIMEOUT = 105;
-  public int JJTWAIT = 106;
-  public int JJTRETRY = 107;
-  public int JJTCOLLECTION = 108;
-  public int JJTFETCHPLAN = 109;
-  public int JJTFETCHPLANITEM = 110;
-  public int JJTTRAVERSEPROJECTIONITEM = 111;
-  public int JJTARRAY = 112;
-  public int JJTJSON = 113;
+  public int JJTWHILECLAUSE = 65;
+  public int JJTUNTILCLAUSE = 66;
+  public int JJTORBLOCK = 67;
+  public int JJTANDBLOCK = 68;
+  public int JJTNOTBLOCK = 69;
+  public int JJTPARENTHESISBLOCK = 70;
+  public int JJTCONDITIONBLOCK = 71;
+  public int JJTCOMPAREOPERATOR = 72;
+  public int JJTLTOPERATOR = 73;
+  public int JJTGTOPERATOR = 74;
+  public int JJTNEOPERATOR = 75;
+  public int JJTNEQOPERATOR = 76;
+  public int JJTGEOPERATOR = 77;
+  public int JJTLEOPERATOR = 78;
+  public int JJTLIKEOPERATOR = 79;
+  public int JJTLUCENEOPERATOR = 80;
+  public int JJTNEAROPERATOR = 81;
+  public int JJTWITHINOPERATOR = 82;
+  public int JJTCONTAINSKEYOPERATOR = 83;
+  public int JJTCONTAINSVALUEOPERATOR = 84;
+  public int JJTEQUALSCOMPAREOPERATOR = 85;
+  public int JJTBINARYCONDITION = 86;
+  public int JJTCONTAINSVALUECONDITION = 87;
+  public int JJTINSTANCEOFCONDITION = 88;
+  public int JJTINDEXMATCHCONDITION = 89;
+  public int JJTBETWEENCONDITION = 90;
+  public int JJTISNULLCONDITION = 91;
+  public int JJTISNOTNULLCONDITION = 92;
+  public int JJTISDEFINEDCONDITION = 93;
+  public int JJTISNOTDEFINEDCONDITION = 94;
+  public int JJTCONTAINSCONDITION = 95;
+  public int JJTINOPERATOR = 96;
+  public int JJTINCONDITION = 97;
+  public int JJTNOTINCONDITION = 98;
+  public int JJTCONTAINSALLCONDITION = 99;
+  public int JJTCONTAINSTEXTCONDITION = 100;
+  public int JJTMATCHESCONDITION = 101;
+  public int JJTORDERBY = 102;
+  public int JJTGROUPBY = 103;
+  public int JJTUNWIND = 104;
+  public int JJTLIMIT = 105;
+  public int JJTSKIP = 106;
+  public int JJTTIMEOUT = 107;
+  public int JJTWAIT = 108;
+  public int JJTRETRY = 109;
+  public int JJTCOLLECTION = 110;
+  public int JJTFETCHPLAN = 111;
+  public int JJTFETCHPLANITEM = 112;
+  public int JJTTRAVERSEPROJECTIONITEM = 113;
+  public int JJTARRAY = 114;
+  public int JJTJSON = 115;
 
 
   public String[] jjtNodeName = {
@@ -185,6 +187,8 @@ public interface OrientSqlTreeConstants
     "MetadataIdentifier",
     "IndexIdentifier",
     "WhereClause",
+    "WhileClause",
+    "UntilClause",
     "OrBlock",
     "AndBlock",
     "NotBlock",
@@ -236,4 +240,4 @@ public interface OrientSqlTreeConstants
     "Json",
   };
 }
-/* JavaCC - OriginalChecksum=9de2524977fb1fdde02bd5ebae2aa8cf (do not edit this line) */
+/* JavaCC - OriginalChecksum=a585d2fbbf7030ed3be3682015b594f2 (do not edit this line) */

@@ -56,6 +56,7 @@ import com.orientechnologies.orient.core.serialization.serializer.OStringSeriali
 @SuppressWarnings("unchecked")
 public class OCommandExecutorSQLTraverse extends OCommandExecutorSQLResultsetAbstract {
   public static final String KEYWORD_WHILE    = "WHILE";
+  public static final String KEYWORD_UNTIL    = "UNTIL";
   public static final String KEYWORD_TRAVERSE = "TRAVERSE";
   public static final String KEYWORD_STRATEGY = "STRATEGY";
   public static final String KEYWORD_MAXDEPTH = "MAXDEPTH";
@@ -85,6 +86,7 @@ public class OCommandExecutorSQLTraverse extends OCommandExecutorSQLResultsetAbs
 
       int endPosition = parserText.length();
 
+      // the last argument is ignored by OSQLTarget constructor
       parsedTarget = OSQLEngine.getInstance().parseTarget(parserText.substring(pos, endPosition), getContext(), KEYWORD_WHILE);
 
       if (parsedTarget.parserIsEnded())
@@ -108,8 +110,21 @@ public class OCommandExecutorSQLTraverse extends OCommandExecutorSQLResultsetAbs
           optimize();
           parserSetCurrentPosition(compiledFilter.parserIsEnded() ? endPosition : compiledFilter.parserGetCurrentPosition()
               + parserGetCurrentPosition());
+        } else if (parserGetLastWord().equalsIgnoreCase(KEYWORD_UNTIL)) {
+
+          compiledFilter = OSQLEngine.getInstance().parseCondition(parserText.substring(parserGetCurrentPosition(), endPosition),
+              getContext(), KEYWORD_UNTIL);
+          compiledFilter.setNegating(true);
+
+          traverse.predicate(compiledFilter);
+          optimize();
+          parserSetCurrentPosition(compiledFilter.parserIsEnded() ? endPosition : compiledFilter.parserGetCurrentPosition()
+              + parserGetCurrentPosition());
         } else
+	{
+	  System.out.println("found keyword until : " );
           parserGoBack();
+	}
       }
 
       parserSkipWhiteSpaces();

@@ -58,6 +58,9 @@ public class OTraverseStatement extends OStatement {
     if (whereClause != null) {
       builder.append(" WHILE ");
       builder.append(whereClause.toString());
+    } else if (whereClause != null) {
+      builder.append(" UNTIL ");
+      builder.append(whereClause.toString());
     }
 
     if (limit != null) {
@@ -93,6 +96,8 @@ public class OTraverseStatement extends OStatement {
     }
 
     if (whereClause != null) {
+      whereClause.replaceParameters(params);
+    } else if (whereClause != null) {
       whereClause.replaceParameters(params);
     }
 

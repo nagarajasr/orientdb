@@ -104,6 +104,8 @@ TOKEN:
 	|
 	< WHILE: ( "w" | "W" ) ( "h" | "H" ) ( "i" | "I" ) ( "l" | "L" ) ( "e" | "E" ) >
 	|
+	< UNTIL: ( "u" | "U" ) ( "n" | "N" ) ( "t" | "T" ) ( "i" | "I" ) ( "l" | "L" ) >
+	|
 	< INTO: ( "i" | "I" ) ( "n" | "N" ) ( "t" | "T" ) ( "o" | "O" ) >
 	|
 	< VALUES: ( "v" | "V" ) ( "a" | "A" ) ( "l" | "L" ) ( "u" | "U" ) ( "e" | "E" ) ( "s" | "S" )>
@@ -606,6 +608,8 @@ OIdentifier Identifier():
             |
             token = <LIKE>
             |
+            token = <UNTIL>
+            |
             token = <IS>
             |
             token = <BETWEEN>
@@ -736,9 +740,9 @@ OStatement QueryStatement():
         LOOKAHEAD( SelectStatement() )
         result = SelectStatement()
         |
-        result = SelectWithoutTargetStatement()
-        |
         result = TraverseStatement()
+        |
+        result = SelectWithoutTargetStatement()
     ){ return result; }
 }
 
@@ -762,7 +766,7 @@ OSelectStatement SelectStatement():
 {}
 {
     (
-   	    <SELECT>
+        <SELECT>
         [ jjtThis.projection = Projection() ]
         <FROM>
         jjtThis.target = FromClause()
@@ -799,7 +803,15 @@ OTraverseStatement TraverseStatement():
     	<FROM>
     	jjtThis.target = FromClause()
     	[ <MAXDEPTH> jjtThis.maxDepth = Integer() ]
-    	[ <WHILE> jjtThis.whereClause = WhereClause() ]
+    	[
+          (
+            LOOKAHEAD( WhileClause() )
+              jjtThis.whereClause = WhileClause()
+          |
+            LOOKAHEAD( UntilClause() )
+              jjtThis.whereClause = UntilClause()
+          )
+        ]
         [ jjtThis.limit = Limit() ]
         [ <STRATEGY>
             (
@@ -2075,6 +2087,22 @@ OIndexIdentifier IndexIdentifier():
 OWhereClause WhereClause():
 {}
 {
+	jjtThis.baseExpression = OrBlock()
+	{return jjtThis;}
+}
+
+OWhereClause WhileClause():
+{}
+{
+         <WHILE>
+	jjtThis.baseExpression = OrBlock()
+	{return jjtThis;}
+}
+
+OWhereClause UntilClause():
+{}
+{
+        <UNTIL>
 	jjtThis.baseExpression = OrBlock()
 	{return jjtThis;}
 }

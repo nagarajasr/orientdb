@@ -31,6 +31,12 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
  * @author Luca Garulli
  */
 public class OSQLFilter extends OSQLPredicate implements OCommandPredicate {
+
+  public OSQLFilter(final String iText, final OCommandContext iContext, final String iFilterKeyword, boolean bNegating) {
+    this(iText,iContext,iFilterKeyword);
+    this.negating = bNegating;
+  }
+
   public OSQLFilter(final String iText, final OCommandContext iContext, final String iFilterKeyword) {
     super();
 
@@ -97,7 +103,8 @@ public class OSQLFilter extends OSQLPredicate implements OCommandPredicate {
       return true;
     }
 
-    return rootCondition.evaluate(iRecord, iCurrentResult, iContext);
+    boolean retVal = (Boolean)rootCondition.evaluate(iRecord, iCurrentResult, iContext);
+    return this.negating?!retVal:retVal;
   }
 
   public OSQLFilterCondition getRootCondition() {
@@ -111,4 +118,14 @@ public class OSQLFilter extends OSQLPredicate implements OCommandPredicate {
     }
     return "Unparsed: " + parserText;
   }
+
+  public boolean getNegating() {
+    return this.negating;
+  }
+
+  public void setNegating(boolean negating) {
+    this.negating = negating;
+  }
+
+  private boolean negating = false;
 }
