@@ -740,9 +740,9 @@ OStatement QueryStatement():
         LOOKAHEAD( SelectStatement() )
         result = SelectStatement()
         |
-        result = TraverseStatement()
-        |
         result = SelectWithoutTargetStatement()
+        |
+        result = TraverseStatement()
     ){ return result; }
 }
 
