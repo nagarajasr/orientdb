@@ -991,7 +991,7 @@ public class ODatabaseDocumentTx extends OListenerManger<ODatabaseListener> impl
   }
 
   /**
-   * Callback the registeted hooks if any.
+   * Callback the registered hooks if any.
    *
    * @param type
    *          Hook type. Define when hook is called.
@@ -1262,6 +1262,7 @@ public class ODatabaseDocumentTx extends OListenerManger<ODatabaseListener> impl
     OClass clazz = metadata.getSchema().getClassByClusterId(clusterId);
     if (clazz != null)
       clazz.removeClusterId(clusterId);
+    getLocalCache().freeCluster(clusterId);
     return storage.dropCluster(iClusterName, iTruncate);
   }
 
@@ -1271,6 +1272,7 @@ public class ODatabaseDocumentTx extends OListenerManger<ODatabaseListener> impl
     final OClass clazz = metadata.getSchema().getClassByClusterId(iClusterId);
     if (clazz != null)
       clazz.removeClusterId(iClusterId);
+    getLocalCache().freeCluster(iClusterId);
     return storage.dropCluster(iClusterId, iTruncate);
   }
 
@@ -2085,6 +2087,10 @@ public class ODatabaseDocumentTx extends OListenerManger<ODatabaseListener> impl
       currentTx.rollback(true, 0);
     }
 
+    // CHECK IT'S NOT INSIDE A HOOK
+    if (!inHook.isEmpty())
+      throw new IllegalStateException("Cannot begin a transaction while a hook is executing");
+
     // WAKE UP LISTENERS
     for (ODatabaseListener listener : browseListeners())
       try {
@@ -2582,6 +2588,9 @@ public class ODatabaseDocumentTx extends OListenerManger<ODatabaseListener> impl
       getLocalCache().clear();
       OSerializationSetThreadLocal.clear();
 
+      // CLEAR SERIALIZATION TL TO AVOID MEMORY LEAKS
+      OSerializationSetThreadLocal.clear();
+
       // WAKE UP ROLLBACK LISTENERS
       for (ODatabaseListener listener : browseListeners())
         try {
@@ -2646,6 +2655,9 @@ public class ODatabaseDocumentTx extends OListenerManger<ODatabaseListener> impl
     }
 
     getLocalCache().clear();
+    OSerializationSetThreadLocal.clear();
+
+    // CLEAR SERIALIZATION TL TO AVOID MEMORY LEAKS
     OSerializationSetThreadLocal.clear();
 
     return this;

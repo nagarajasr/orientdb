@@ -4,11 +4,18 @@ package com.orientechnologies.orient.core.sql.parser;
 import java.io.InputStream;
 import java.util.List;
 import java.util.ArrayList;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.exception.OQueryParsingException;
 
 /** Orient Database Sql grammar. */
 public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, OrientSqlConstants {/*@bgen(jjtree)*/
   protected JJTOrientSqlState jjtree = new JJTOrientSqlState();
+  class ValidationStats{
+    int luceneCount = 0;
+  }
   private int inputParamCount = 0;
+
+  private List<ValidationStats> validationStats = new ArrayList<ValidationStats>();
 
     /** Main entry point. For development purpose only */
   public static void main(String args[]) {
@@ -541,10 +548,10 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   final public OStatement Statement() throws ParseException {
  /*@bgen(jjtree) Statement */
-  OStatement jjtn000 = new OStatement(JJTSTATEMENT);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));OStatement result = null;
+    OStatement jjtn000 = new OStatement(JJTSTATEMENT);
+    boolean jjtc000 = true;
+    jjtree.openNodeScope(jjtn000);
+    jjtn000.jjtSetFirstToken(getToken(1));OStatement result = null;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case SELECT:
@@ -598,10 +605,10 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
         jj_la1[7] = jj_gen;
         ;
       }
-                            jjtree.closeNodeScope(jjtn000, true);
-                            jjtc000 = false;
-                            jjtn000.jjtSetLastToken(getToken(0));
-                            {if (true) return result;}
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+            {if (true) return result;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -636,11 +643,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
         result = SelectStatement();
       } else {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case TRAVERSE:
-          result = TraverseStatement();
-          break;
         case SELECT:
           result = SelectWithoutTargetStatement();
+          break;
+        case TRAVERSE:
+          result = TraverseStatement();
           break;
         default:
           jj_la1[8] = jj_gen;
@@ -677,10 +684,10 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   final public OSelectWithoutTargetStatement SelectWithoutTargetStatement() throws ParseException {
  /*@bgen(jjtree) SelectWithoutTargetStatement */
-  OSelectWithoutTargetStatement jjtn000 = new OSelectWithoutTargetStatement(JJTSELECTWITHOUTTARGETSTATEMENT);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
+ OSelectWithoutTargetStatement jjtn000 = new OSelectWithoutTargetStatement(JJTSELECTWITHOUTTARGETSTATEMENT);
+ boolean jjtc000 = true;
+ jjtree.openNodeScope(jjtn000);
+ jjtn000.jjtSetFirstToken(getToken(1));validationStats.add(0, new ValidationStats());
     try {
       jj_consume_token(SELECT);
       jjtn000.projection = Projection();
@@ -744,9 +751,10 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
         jj_la1[15] = jj_gen;
         ;
       }
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtc000 = false;
-        jjtn000.jjtSetLastToken(getToken(0));
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+      jjtn000.jjtSetLastToken(getToken(0));
+        jjtn000.validate(validationStats.remove(0));
         {if (true) return jjtn000;}
     } catch (Throwable jjte000) {
       if (jjtc000) {
@@ -773,10 +781,10 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   final public OSelectStatement SelectStatement() throws ParseException {
  /*@bgen(jjtree) SelectStatement */
-  OSelectStatement jjtn000 = new OSelectStatement(JJTSELECTSTATEMENT);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
+ OSelectStatement jjtn000 = new OSelectStatement(JJTSELECTSTATEMENT);
+ boolean jjtc000 = true;
+ jjtree.openNodeScope(jjtn000);
+ jjtn000.jjtSetFirstToken(getToken(1));validationStats.add(0, new ValidationStats());
     try {
       jj_consume_token(SELECT);
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -951,7 +959,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
       jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
       jjtn000.jjtSetLastToken(getToken(0));
-     {if (true) return jjtn000;}
+        jjtn000.validate(validationStats.remove(0));
+        {if (true) return jjtn000;}
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -5654,7 +5663,12 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
    jjtree.closeNodeScope(jjtn000, true);
    jjtc000 = false;
    jjtn000.jjtSetLastToken(getToken(0));
-  {if (true) return jjtn000;}
+    ValidationStats stats = validationStats.get(0);
+    stats.luceneCount++;
+//    if(stats.luceneCount > 1){
+//        throw new OQueryParsingException("Two or more LUCENE operators are not allowed in the same query");
+//    }
+    {if (true) return jjtn000;}
     } finally {
   if (jjtc000) {
     jjtree.closeNodeScope(jjtn000, true);
@@ -8891,16 +8905,16 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_427() {
+    if (jj_scan_token(CHARACTER_LITERAL)) return true;
+    return false;
+  }
+
   private boolean jj_3R_266() {
     if (jj_scan_token(COMMA)) return true;
     if (jj_3R_59()) return true;
     if (jj_scan_token(EQ)) return true;
     if (jj_3R_65()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_427() {
-    if (jj_scan_token(CHARACTER_LITERAL)) return true;
     return false;
   }
 
@@ -8911,12 +8925,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_425() {
     if (jj_3R_59()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_337() {
-    if (jj_scan_token(COMMA)) return true;
-    if (jj_3R_65()) return true;
     return false;
   }
 
@@ -8941,16 +8949,9 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3_31() {
-    if (jj_scan_token(SET)) return true;
-    if (jj_3R_59()) return true;
-    if (jj_scan_token(EQ)) return true;
+  private boolean jj_3R_337() {
+    if (jj_scan_token(COMMA)) return true;
     if (jj_3R_65()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_266()) { jj_scanpos = xsp; break; }
-    }
     return false;
   }
 
@@ -8964,6 +8965,24 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3_31() {
+    if (jj_scan_token(SET)) return true;
+    if (jj_3R_59()) return true;
+    if (jj_scan_token(EQ)) return true;
+    if (jj_3R_65()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_266()) { jj_scanpos = xsp; break; }
+    }
+    return false;
+  }
+
+  private boolean jj_3R_385() {
+    if (jj_3R_59()) return true;
+    return false;
+  }
+
   private boolean jj_3R_265() {
     if (jj_scan_token(COMMA)) return true;
     if (jj_scan_token(LPAREN)) return true;
@@ -8974,17 +8993,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
       if (jj_3R_337()) { jj_scanpos = xsp; break; }
     }
     if (jj_scan_token(RPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_385() {
-    if (jj_3R_59()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_264() {
-    if (jj_scan_token(COMMA)) return true;
-    if (jj_3R_65()) return true;
     return false;
   }
 
@@ -9012,9 +9020,9 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_60() {
+  private boolean jj_3R_264() {
     if (jj_scan_token(COMMA)) return true;
-    if (jj_3R_59()) return true;
+    if (jj_3R_65()) return true;
     return false;
   }
 
@@ -9027,7 +9035,18 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_60() {
+    if (jj_scan_token(COMMA)) return true;
+    if (jj_3R_59()) return true;
+    return false;
+  }
+
   private boolean jj_3_100() {
+    if (jj_3R_75()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_447() {
     if (jj_3R_75()) return true;
     return false;
   }
@@ -9056,8 +9075,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_447() {
-    if (jj_3R_75()) return true;
+  private boolean jj_3R_441() {
+    if (jj_3R_286()) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_447()) jj_scanpos = xsp;
     return false;
   }
 
@@ -9076,14 +9098,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     }
     xsp = jj_scanpos;
     if (jj_3R_167()) jj_scanpos = xsp;
-    return false;
-  }
-
-  private boolean jj_3R_441() {
-    if (jj_3R_286()) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_447()) jj_scanpos = xsp;
     return false;
   }
 
@@ -9347,19 +9361,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_155() {
-    if (jj_3R_255()) return true;
-    return false;
-  }
-
   private boolean jj_3R_412() {
     if (jj_scan_token(RECORD_ATTRIBUTE)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_154() {
-    if (jj_scan_token(WHERE)) return true;
-    if (jj_3R_238()) return true;
     return false;
   }
 
@@ -9370,11 +9373,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_435() {
     if (jj_scan_token(DESC)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_153() {
-    if (jj_3R_59()) return true;
     return false;
   }
 
@@ -9410,11 +9408,27 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_155() {
+    if (jj_3R_255()) return true;
+    return false;
+  }
+
   private boolean jj_3R_410() {
     if (jj_3R_59()) return true;
     Token xsp;
     xsp = jj_scanpos;
     if (jj_3R_434()) jj_scanpos = xsp;
+    return false;
+  }
+
+  private boolean jj_3R_154() {
+    if (jj_scan_token(WHERE)) return true;
+    if (jj_3R_238()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_153() {
+    if (jj_3R_59()) return true;
     return false;
   }
 
@@ -9441,6 +9455,21 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_377() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_410()) {
+    jj_scanpos = xsp;
+    if (jj_3R_411()) {
+    jj_scanpos = xsp;
+    if (jj_3R_412()) return true;
+    }
+    }
+    xsp = jj_scanpos;
+    if (jj_3R_413()) jj_scanpos = xsp;
+    return false;
+  }
+
   private boolean jj_3R_145() {
     if (jj_3R_255()) return true;
     return false;
@@ -9457,44 +9486,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_143() {
-    if (jj_3R_59()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_257() {
-    if (jj_3R_50()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_377() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_410()) {
-    jj_scanpos = xsp;
-    if (jj_3R_411()) {
-    jj_scanpos = xsp;
-    if (jj_3R_412()) return true;
-    }
-    }
-    xsp = jj_scanpos;
-    if (jj_3R_413()) jj_scanpos = xsp;
-    return false;
-  }
-
-  private boolean jj_3R_142() {
-    if (jj_3R_64()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_334() {
-    if (jj_scan_token(COMMA)) return true;
-    if (jj_3R_63()) return true;
-    return false;
-  }
-
   private boolean jj_3R_407() {
     if (jj_3R_75()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_143() {
+    if (jj_3R_59()) return true;
     return false;
   }
 
@@ -9511,6 +9509,16 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_375() {
     if (jj_scan_token(RECORD_ATTRIBUTE)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_257() {
+    if (jj_3R_50()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_142() {
+    if (jj_3R_64()) return true;
     return false;
   }
 
@@ -9534,6 +9542,20 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_334() {
+    if (jj_scan_token(COMMA)) return true;
+    if (jj_3R_63()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_373() {
+    if (jj_3R_59()) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_407()) jj_scanpos = xsp;
+    return false;
+  }
+
   private boolean jj_3R_141() {
     if (jj_scan_token(LPAREN)) return true;
     Token xsp;
@@ -9543,14 +9565,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     if (jj_3R_258()) return true;
     }
     if (jj_scan_token(RPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_373() {
-    if (jj_3R_59()) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_407()) jj_scanpos = xsp;
     return false;
   }
 
@@ -9564,22 +9578,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_140() {
-    if (jj_scan_token(LBRACKET)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_256()) jj_scanpos = xsp;
-    if (jj_scan_token(RBRACKET)) return true;
-    return false;
-  }
-
   private boolean jj_3R_404() {
     if (jj_3R_75()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_139() {
-    if (jj_3R_63()) return true;
     return false;
   }
 
@@ -9608,6 +9608,15 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_140() {
+    if (jj_scan_token(LBRACKET)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_256()) jj_scanpos = xsp;
+    if (jj_scan_token(RBRACKET)) return true;
+    return false;
+  }
+
   private boolean jj_3R_319() {
     if (jj_scan_token(LPAREN)) return true;
     Token xsp;
@@ -9622,6 +9631,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     xsp = jj_scanpos;
     if (jj_3R_376()) jj_scanpos = xsp;
     if (jj_scan_token(RPAREN)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_139() {
+    if (jj_3R_63()) return true;
     return false;
   }
 
@@ -9669,6 +9683,21 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_318() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_369()) {
+    jj_scanpos = xsp;
+    if (jj_3R_370()) {
+    jj_scanpos = xsp;
+    if (jj_3R_371()) return true;
+    }
+    }
+    xsp = jj_scanpos;
+    if (jj_3R_372()) jj_scanpos = xsp;
+    return false;
+  }
+
   private boolean jj_3R_152() {
     if (jj_3R_255()) return true;
     return false;
@@ -9700,36 +9729,9 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_318() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_369()) {
-    jj_scanpos = xsp;
-    if (jj_3R_370()) {
-    jj_scanpos = xsp;
-    if (jj_3R_371()) return true;
-    }
-    }
-    xsp = jj_scanpos;
-    if (jj_3R_372()) jj_scanpos = xsp;
-    return false;
-  }
-
   private boolean jj_3R_335() {
     if (jj_scan_token(COMMA)) return true;
     if (jj_3R_63()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_148() {
-    if (jj_scan_token(LPAREN)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_260()) {
-    jj_scanpos = xsp;
-    if (jj_3R_261()) return true;
-    }
-    if (jj_scan_token(RPAREN)) return true;
     return false;
   }
 
@@ -9749,13 +9751,15 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_259() {
-    if (jj_3R_63()) return true;
+  private boolean jj_3R_148() {
+    if (jj_scan_token(LPAREN)) return true;
     Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_335()) { jj_scanpos = xsp; break; }
+    xsp = jj_scanpos;
+    if (jj_3R_260()) {
+    jj_scanpos = xsp;
+    if (jj_3R_261()) return true;
     }
+    if (jj_scan_token(RPAREN)) return true;
     return false;
   }
 
@@ -9769,17 +9773,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_147() {
-    if (jj_scan_token(LBRACKET)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_259()) jj_scanpos = xsp;
-    if (jj_scan_token(RBRACKET)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_146() {
+  private boolean jj_3R_259() {
     if (jj_3R_63()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_335()) { jj_scanpos = xsp; break; }
+    }
     return false;
   }
 
@@ -9800,13 +9800,22 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_228() {
-    if (jj_3R_65()) return true;
+  private boolean jj_3R_147() {
+    if (jj_scan_token(LBRACKET)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_259()) jj_scanpos = xsp;
+    if (jj_scan_token(RBRACKET)) return true;
     return false;
   }
 
-  private boolean jj_3_24() {
-    if (jj_3R_58()) return true;
+  private boolean jj_3R_146() {
+    if (jj_3R_63()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_228() {
+    if (jj_3R_65()) return true;
     return false;
   }
 
@@ -9817,15 +9826,20 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3_23() {
-    if (jj_3R_50()) return true;
-    return false;
-  }
-
   private boolean jj_3_98() {
     if (jj_scan_token(LPAREN)) return true;
     if (jj_3R_72()) return true;
     if (jj_scan_token(RPAREN)) return true;
+    return false;
+  }
+
+  private boolean jj_3_24() {
+    if (jj_3R_58()) return true;
+    return false;
+  }
+
+  private boolean jj_3_23() {
+    if (jj_3R_50()) return true;
     return false;
   }
 
@@ -9866,8 +9880,25 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_98() {
+    if (jj_3R_65()) return true;
+    if (jj_scan_token(CONTAINSALL)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3_98()) {
+    jj_scanpos = xsp;
+    if (jj_3R_228()) return true;
+    }
+    return false;
+  }
+
   private boolean jj_3R_330() {
     if (jj_3R_50()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_223() {
+    if (jj_3R_76()) return true;
     return false;
   }
 
@@ -9887,32 +9918,22 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3_97() {
+    if (jj_scan_token(LPAREN)) return true;
+    if (jj_3R_64()) return true;
+    if (jj_scan_token(RPAREN)) return true;
+    return false;
+  }
+
   private boolean jj_3R_383() {
     if (jj_scan_token(COMMA)) return true;
     if (jj_3R_63()) return true;
     return false;
   }
 
-  private boolean jj_3R_98() {
-    if (jj_3R_65()) return true;
-    if (jj_scan_token(CONTAINSALL)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3_98()) {
-    jj_scanpos = xsp;
-    if (jj_3R_228()) return true;
-    }
-    return false;
-  }
-
-  private boolean jj_3R_223() {
-    if (jj_3R_76()) return true;
-    return false;
-  }
-
-  private boolean jj_3_97() {
+  private boolean jj_3_96() {
     if (jj_scan_token(LPAREN)) return true;
-    if (jj_3R_64()) return true;
+    if (jj_3R_50()) return true;
     if (jj_scan_token(RPAREN)) return true;
     return false;
   }
@@ -9925,13 +9946,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     jj_scanpos = xsp;
     if (jj_3R_331()) return true;
     }
-    if (jj_scan_token(RPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3_96() {
-    if (jj_scan_token(LPAREN)) return true;
-    if (jj_3R_50()) return true;
     if (jj_scan_token(RPAREN)) return true;
     return false;
   }
@@ -9962,6 +9976,25 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3_95() {
+    if (jj_scan_token(LPAREN)) return true;
+    if (jj_3R_64()) return true;
+    if (jj_scan_token(RPAREN)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_222() {
+    if (jj_3R_76()) return true;
+    return false;
+  }
+
+  private boolean jj_3_94() {
+    if (jj_scan_token(LPAREN)) return true;
+    if (jj_3R_50()) return true;
+    if (jj_scan_token(RPAREN)) return true;
+    return false;
+  }
+
   private boolean jj_3R_251() {
     if (jj_scan_token(LBRACKET)) return true;
     Token xsp;
@@ -9983,25 +10016,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3_21() {
     if (jj_3R_50()) return true;
-    return false;
-  }
-
-  private boolean jj_3_95() {
-    if (jj_scan_token(LPAREN)) return true;
-    if (jj_3R_64()) return true;
-    if (jj_scan_token(RPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_222() {
-    if (jj_3R_76()) return true;
-    return false;
-  }
-
-  private boolean jj_3_94() {
-    if (jj_scan_token(LPAREN)) return true;
-    if (jj_3R_50()) return true;
-    if (jj_scan_token(RPAREN)) return true;
     return false;
   }
 
@@ -10030,6 +10044,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3_93() {
+    if (jj_3R_65()) return true;
+    return false;
+  }
+
   private boolean jj_3R_135() {
     if (jj_3R_59()) return true;
     return false;
@@ -10042,17 +10061,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_134() {
     if (jj_3R_64()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_328() {
-    if (jj_scan_token(COMMA)) return true;
-    if (jj_3R_63()) return true;
-    return false;
-  }
-
-  private boolean jj_3_93() {
-    if (jj_3R_65()) return true;
     return false;
   }
 
@@ -10071,6 +10079,22 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_328() {
+    if (jj_scan_token(COMMA)) return true;
+    if (jj_3R_63()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_221() {
+    if (jj_scan_token(IN)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_225() {
+    if (jj_3R_65()) return true;
+    return false;
+  }
+
   private boolean jj_3R_133() {
     if (jj_scan_token(LPAREN)) return true;
     Token xsp;
@@ -10083,8 +10107,10 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_221() {
-    if (jj_scan_token(IN)) return true;
+  private boolean jj_3_92() {
+    if (jj_scan_token(LPAREN)) return true;
+    if (jj_3R_72()) return true;
+    if (jj_scan_token(RPAREN)) return true;
     return false;
   }
 
@@ -10098,15 +10124,15 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_225() {
+  private boolean jj_3R_96() {
     if (jj_3R_65()) return true;
-    return false;
-  }
-
-  private boolean jj_3_92() {
-    if (jj_scan_token(LPAREN)) return true;
-    if (jj_3R_72()) return true;
-    if (jj_scan_token(RPAREN)) return true;
+    if (jj_scan_token(CONTAINS)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3_92()) {
+    jj_scanpos = xsp;
+    if (jj_3R_225()) return true;
+    }
     return false;
   }
 
@@ -10121,18 +10147,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_131() {
     if (jj_3R_63()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_96() {
-    if (jj_3R_65()) return true;
-    if (jj_scan_token(CONTAINS)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3_92()) {
-    jj_scanpos = xsp;
-    if (jj_3R_225()) return true;
-    }
     return false;
   }
 
@@ -10151,6 +10165,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_234() {
     if (jj_scan_token(STRING_LITERAL)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_91() {
+    if (jj_3R_65()) return true;
+    if (jj_scan_token(IS)) return true;
+    if (jj_scan_token(DEFINED)) return true;
     return false;
   }
 
@@ -10190,23 +10211,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_91() {
-    if (jj_3R_65()) return true;
-    if (jj_scan_token(IS)) return true;
-    if (jj_scan_token(DEFINED)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_246() {
-    if (jj_3R_63()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_327()) { jj_scanpos = xsp; break; }
-    }
-    return false;
-  }
-
   private boolean jj_3R_88() {
     if (jj_3R_65()) return true;
     if (jj_scan_token(IS)) return true;
@@ -10222,6 +10226,22 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_246() {
+    if (jj_3R_63()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_327()) { jj_scanpos = xsp; break; }
+    }
+    return false;
+  }
+
+  private boolean jj_3R_359() {
+    if (jj_scan_token(COMMA)) return true;
+    if (jj_3R_65()) return true;
+    return false;
+  }
+
   private boolean jj_3R_129() {
     if (jj_scan_token(LBRACKET)) return true;
     Token xsp;
@@ -10233,12 +10253,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_128() {
     if (jj_3R_63()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_359() {
-    if (jj_scan_token(COMMA)) return true;
-    if (jj_3R_65()) return true;
     return false;
   }
 
@@ -10257,11 +10271,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3_20() {
-    if (jj_3R_57()) return true;
-    return false;
-  }
-
   private boolean jj_3R_95() {
     if (jj_3R_65()) return true;
     if (jj_scan_token(BETWEEN)) return true;
@@ -10277,28 +10286,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3_19() {
-    if (jj_3R_56()) return true;
-    return false;
-  }
-
-  private boolean jj_3_18() {
-    if (jj_3R_55()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_53() {
-    if (jj_scan_token(DELETE)) return true;
-    if (jj_scan_token(EDGE)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_128()) {
-    jj_scanpos = xsp;
-    if (jj_3R_129()) return true;
-    }
-    return false;
-  }
-
   private boolean jj_3R_305() {
     if (jj_3R_65()) return true;
     Token xsp;
@@ -10309,18 +10296,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3_17() {
-    if (jj_3R_54()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_109() {
+  private boolean jj_3_20() {
     if (jj_3R_57()) return true;
     return false;
   }
 
-  private boolean jj_3_16() {
-    if (jj_3R_53()) return true;
+  private boolean jj_3_19() {
+    if (jj_3R_56()) return true;
     return false;
   }
 
@@ -10345,8 +10327,20 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_108() {
-    if (jj_3R_56()) return true;
+  private boolean jj_3_18() {
+    if (jj_3R_55()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_53() {
+    if (jj_scan_token(DELETE)) return true;
+    if (jj_scan_token(EDGE)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_128()) {
+    jj_scanpos = xsp;
+    if (jj_3R_129()) return true;
+    }
     return false;
   }
 
@@ -10360,13 +10354,23 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_107() {
-    if (jj_3R_55()) return true;
+  private boolean jj_3_17() {
+    if (jj_3R_54()) return true;
     return false;
   }
 
-  private boolean jj_3R_106() {
-    if (jj_3R_54()) return true;
+  private boolean jj_3R_109() {
+    if (jj_3R_57()) return true;
+    return false;
+  }
+
+  private boolean jj_3_16() {
+    if (jj_3R_53()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_108() {
+    if (jj_3R_56()) return true;
     return false;
   }
 
@@ -10380,8 +10384,29 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_107() {
+    if (jj_3R_55()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_106() {
+    if (jj_3R_54()) return true;
+    return false;
+  }
+
   private boolean jj_3R_105() {
     if (jj_3R_53()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_101() {
+    if (jj_scan_token(KEY)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_231()) {
+    jj_scanpos = xsp;
+    if (jj_3R_232()) return true;
+    }
     return false;
   }
 
@@ -10404,25 +10429,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_101() {
-    if (jj_scan_token(KEY)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_231()) {
-    jj_scanpos = xsp;
-    if (jj_3R_232()) return true;
-    }
-    return false;
-  }
-
   private boolean jj_3_91() {
     if (jj_3R_65()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_43() {
-    if (jj_scan_token(DELETE)) return true;
-    if (jj_scan_token(VERTEX)) return true;
     return false;
   }
 
@@ -10438,8 +10446,21 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_43() {
+    if (jj_scan_token(DELETE)) return true;
+    if (jj_scan_token(VERTEX)) return true;
+    return false;
+  }
+
   private boolean jj_3R_227() {
     if (jj_3R_65()) return true;
+    return false;
+  }
+
+  private boolean jj_3_90() {
+    if (jj_scan_token(LPAREN)) return true;
+    if (jj_3R_72()) return true;
+    if (jj_scan_token(RPAREN)) return true;
     return false;
   }
 
@@ -10458,13 +10479,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3_90() {
-    if (jj_scan_token(LPAREN)) return true;
-    if (jj_3R_72()) return true;
-    if (jj_scan_token(RPAREN)) return true;
-    return false;
-  }
-
   private boolean jj_3_14() {
     if (jj_3R_51()) return true;
     return false;
@@ -10473,6 +10487,18 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
   private boolean jj_3R_42() {
     if (jj_scan_token(DELETE)) return true;
     if (jj_scan_token(FROM)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_97() {
+    if (jj_3R_65()) return true;
+    if (jj_3R_226()) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3_90()) {
+    jj_scanpos = xsp;
+    if (jj_3R_227()) return true;
+    }
     return false;
   }
 
@@ -10492,25 +10518,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_324() {
-    if (jj_3R_322()) return true;
-    return false;
-  }
-
   private boolean jj_3R_444() {
     if (jj_3R_52()) return true;
     return false;
   }
 
-  private boolean jj_3R_97() {
-    if (jj_3R_65()) return true;
-    if (jj_3R_226()) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3_90()) {
-    jj_scanpos = xsp;
-    if (jj_3R_227()) return true;
-    }
+  private boolean jj_3R_324() {
+    if (jj_3R_322()) return true;
     return false;
   }
 
@@ -10519,8 +10533,20 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_323() {
-    if (jj_3R_255()) return true;
+  private boolean jj_3R_394() {
+    if (jj_scan_token(EQEQ)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_94() {
+    if (jj_3R_65()) return true;
+    if (jj_3R_224()) return true;
+    if (jj_3R_65()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_393() {
+    if (jj_scan_token(EQ)) return true;
     return false;
   }
 
@@ -10531,6 +10557,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     jj_scanpos = xsp;
     if (jj_3R_444()) return true;
     }
+    return false;
+  }
+
+  private boolean jj_3R_323() {
+    if (jj_3R_255()) return true;
     return false;
   }
 
@@ -10546,11 +10577,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_394() {
-    if (jj_scan_token(EQEQ)) return true;
-    return false;
-  }
-
   private boolean jj_3R_429() {
     if (jj_3R_441()) return true;
     Token xsp;
@@ -10558,18 +10584,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
       xsp = jj_scanpos;
       if (jj_3R_442()) { jj_scanpos = xsp; break; }
     }
-    return false;
-  }
-
-  private boolean jj_3R_94() {
-    if (jj_3R_65()) return true;
-    if (jj_3R_224()) return true;
-    if (jj_3R_65()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_393() {
-    if (jj_scan_token(EQ)) return true;
     return false;
   }
 
@@ -10598,6 +10612,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     if (jj_3R_432()) jj_scanpos = xsp;
     xsp = jj_scanpos;
     if (jj_3R_433()) jj_scanpos = xsp;
+    return false;
+  }
+
+  private boolean jj_3R_226() {
+    if (jj_scan_token(CONTAINSVALUE)) return true;
     return false;
   }
 
@@ -10648,13 +10667,18 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_353() {
+    if (jj_scan_token(CONTAINSKEY)) return true;
+    return false;
+  }
+
   private boolean jj_3R_123() {
     if (jj_3R_244()) return true;
     return false;
   }
 
-  private boolean jj_3R_226() {
-    if (jj_scan_token(CONTAINSVALUE)) return true;
+  private boolean jj_3R_356() {
+    if (jj_scan_token(WITHIN)) return true;
     return false;
   }
 
@@ -10665,11 +10689,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_120() {
     if (jj_3R_240()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_353() {
-    if (jj_scan_token(CONTAINSKEY)) return true;
     return false;
   }
 
@@ -10694,8 +10713,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_356() {
-    if (jj_scan_token(WITHIN)) return true;
+  private boolean jj_3R_355() {
+    if (jj_scan_token(NEAR)) return true;
     return false;
   }
 
@@ -10741,14 +10760,14 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_355() {
-    if (jj_scan_token(NEAR)) return true;
-    return false;
-  }
-
   private boolean jj_3R_161() {
     if (jj_scan_token(LOCK)) return true;
     if (jj_scan_token(RECORD)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_354() {
+    if (jj_scan_token(LUCENE)) return true;
     return false;
   }
 
@@ -10772,8 +10791,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_354() {
-    if (jj_scan_token(LUCENE)) return true;
+  private boolean jj_3R_352() {
+    if (jj_scan_token(LIKE)) return true;
     return false;
   }
 
@@ -10803,8 +10822,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_352() {
-    if (jj_scan_token(LIKE)) return true;
+  private boolean jj_3R_351() {
+    if (jj_scan_token(LE)) return true;
     return false;
   }
 
@@ -10813,13 +10832,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3_10() {
-    if (jj_3R_47()) return true;
+  private boolean jj_3R_350() {
+    if (jj_scan_token(GE)) return true;
     return false;
   }
 
-  private boolean jj_3R_351() {
-    if (jj_scan_token(LE)) return true;
+  private boolean jj_3_10() {
+    if (jj_3R_47()) return true;
     return false;
   }
 
@@ -10838,23 +10857,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_350() {
-    if (jj_scan_token(GE)) return true;
-    return false;
-  }
-
   private boolean jj_3R_349() {
     if (jj_scan_token(NEQ)) return true;
-    return false;
-  }
-
-  private boolean jj_3_7() {
-    if (jj_3R_44()) return true;
-    return false;
-  }
-
-  private boolean jj_3_6() {
-    if (jj_3R_43()) return true;
     return false;
   }
 
@@ -10863,23 +10867,18 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3_7() {
+    if (jj_3R_44()) return true;
+    return false;
+  }
+
   private boolean jj_3R_347() {
     if (jj_scan_token(GT)) return true;
     return false;
   }
 
-  private boolean jj_3_5() {
-    if (jj_3R_42()) return true;
-    return false;
-  }
-
-  private boolean jj_3_4() {
-    if (jj_3R_41()) return true;
-    return false;
-  }
-
-  private boolean jj_3_3() {
-    if (jj_3R_40()) return true;
+  private boolean jj_3_6() {
+    if (jj_3R_43()) return true;
     return false;
   }
 
@@ -10918,6 +10917,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3_5() {
+    if (jj_3R_42()) return true;
+    return false;
+  }
+
   private boolean jj_3R_298() {
     if (jj_3R_351()) return true;
     return false;
@@ -10933,13 +10937,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_342() {
-    if (jj_3R_41()) return true;
+  private boolean jj_3R_295() {
+    if (jj_3R_348()) return true;
     return false;
   }
 
-  private boolean jj_3R_295() {
-    if (jj_3R_348()) return true;
+  private boolean jj_3_4() {
+    if (jj_3R_41()) return true;
     return false;
   }
 
@@ -10953,18 +10957,8 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_341() {
+  private boolean jj_3_3() {
     if (jj_3R_40()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_285() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_341()) {
-    jj_scanpos = xsp;
-    if (jj_3R_342()) return true;
-    }
     return false;
   }
 
@@ -10978,13 +10972,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_104() {
-    if (jj_scan_token(MINUS)) return true;
+  private boolean jj_3_87() {
+    if (jj_3R_100()) return true;
     return false;
   }
 
-  private boolean jj_3_87() {
-    if (jj_3R_100()) return true;
+  private boolean jj_3R_342() {
+    if (jj_3R_41()) return true;
     return false;
   }
 
@@ -11028,16 +11022,13 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_220() {
-    if (jj_scan_token(FALSE)) return true;
+  private boolean jj_3R_341() {
+    if (jj_3R_40()) return true;
     return false;
   }
 
-  private boolean jj_3R_41() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_104()) jj_scanpos = xsp;
-    if (jj_scan_token(FLOATING_POINT_LITERAL)) return true;
+  private boolean jj_3R_220() {
+    if (jj_scan_token(FALSE)) return true;
     return false;
   }
 
@@ -11061,6 +11052,16 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_285() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_341()) {
+    jj_scanpos = xsp;
+    if (jj_3R_342()) return true;
+    }
+    return false;
+  }
+
   private boolean jj_3_84() {
     if (jj_3R_97()) return true;
     return false;
@@ -11068,6 +11069,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_218() {
     if (jj_3R_102()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_104() {
+    if (jj_scan_token(MINUS)) return true;
     return false;
   }
 
@@ -11086,13 +11092,16 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_103() {
-    if (jj_scan_token(MINUS)) return true;
+  private boolean jj_3R_214() {
+    if (jj_3R_98()) return true;
     return false;
   }
 
-  private boolean jj_3R_214() {
-    if (jj_3R_98()) return true;
+  private boolean jj_3R_41() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_104()) jj_scanpos = xsp;
+    if (jj_scan_token(FLOATING_POINT_LITERAL)) return true;
     return false;
   }
 
@@ -11108,14 +11117,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_213() {
     if (jj_3R_97()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_40() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_103()) jj_scanpos = xsp;
-    if (jj_scan_token(INTEGER_LITERAL)) return true;
     return false;
   }
 
@@ -11144,6 +11145,11 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_103() {
+    if (jj_scan_token(MINUS)) return true;
+    return false;
+  }
+
   private boolean jj_3R_210() {
     if (jj_3R_94()) return true;
     return false;
@@ -11156,6 +11162,14 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3_76() {
     if (jj_3R_89()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_40() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_103()) jj_scanpos = xsp;
+    if (jj_scan_token(INTEGER_LITERAL)) return true;
     return false;
   }
 
@@ -11497,6 +11511,37 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_316() {
+    if (jj_scan_token(COMMA)) return true;
+    if (jj_3R_315()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_312() {
+    if (jj_scan_token(LPAREN)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_363()) {
+    jj_scanpos = xsp;
+    if (jj_3R_364()) {
+    jj_scanpos = xsp;
+    if (jj_3R_365()) return true;
+    }
+    }
+    if (jj_scan_token(RPAREN)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_311() {
+    if (jj_3R_362()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_310() {
+    if (jj_3R_361()) return true;
+    return false;
+  }
+
   private boolean jj_3R_164() {
     if (jj_scan_token(BACKTICK)) return true;
     Token xsp;
@@ -11719,37 +11764,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_316() {
-    if (jj_scan_token(COMMA)) return true;
-    if (jj_3R_315()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_312() {
-    if (jj_scan_token(LPAREN)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_363()) {
-    jj_scanpos = xsp;
-    if (jj_3R_364()) {
-    jj_scanpos = xsp;
-    if (jj_3R_365()) return true;
-    }
-    }
-    if (jj_scan_token(RPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_311() {
-    if (jj_3R_362()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_310() {
-    if (jj_3R_361()) return true;
-    return false;
-  }
-
   private boolean jj_3R_309() {
     if (jj_3R_360()) return true;
     return false;
@@ -11823,6 +11837,26 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
+  private boolean jj_3R_368() {
+    if (jj_scan_token(LPAREN)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_401()) {
+    jj_scanpos = xsp;
+    if (jj_3R_402()) {
+    jj_scanpos = xsp;
+    if (jj_3R_403()) return true;
+    }
+    }
+    if (jj_scan_token(RPAREN)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_367() {
+    if (jj_3R_65()) return true;
+    return false;
+  }
+
   private boolean jj_3R_59() {
     Token xsp;
     xsp = jj_scanpos;
@@ -11884,23 +11918,15 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     return false;
   }
 
-  private boolean jj_3R_368() {
-    if (jj_scan_token(LPAREN)) return true;
+  private boolean jj_3R_315() {
+    if (jj_3R_59()) return true;
+    if (jj_scan_token(EQ)) return true;
     Token xsp;
     xsp = jj_scanpos;
-    if (jj_3R_401()) {
+    if (jj_3R_367()) {
     jj_scanpos = xsp;
-    if (jj_3R_402()) {
-    jj_scanpos = xsp;
-    if (jj_3R_403()) return true;
+    if (jj_3R_368()) return true;
     }
-    }
-    if (jj_scan_token(RPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_367() {
-    if (jj_3R_65()) return true;
     return false;
   }
 
@@ -11916,28 +11942,6 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
     if (jj_3R_40()) return true;
     if (jj_scan_token(COLON)) return true;
     if (jj_3R_40()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_315() {
-    if (jj_3R_59()) return true;
-    if (jj_scan_token(EQ)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_367()) {
-    jj_scanpos = xsp;
-    if (jj_3R_368()) return true;
-    }
-    return false;
-  }
-
-  private boolean jj_3R_63() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3_1()) {
-    jj_scanpos = xsp;
-    if (jj_3_2()) return true;
-    }
     return false;
   }
 
@@ -11964,6 +11968,16 @@ public class OrientSql/*@bgen(jjtree)*/implements OrientSqlTreeConstants, Orient
 
   private boolean jj_3R_116() {
     if (jj_3R_236()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_63() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3_1()) {
+    jj_scanpos = xsp;
+    if (jj_3_2()) return true;
+    }
     return false;
   }
 
