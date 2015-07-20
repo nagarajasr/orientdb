@@ -122,7 +122,6 @@ public class OCommandExecutorSQLTraverse extends OCommandExecutorSQLResultsetAbs
               + parserGetCurrentPosition());
         } else
 	{
-	  System.out.println("found keyword until : " );
           parserGoBack();
 	}
       }
