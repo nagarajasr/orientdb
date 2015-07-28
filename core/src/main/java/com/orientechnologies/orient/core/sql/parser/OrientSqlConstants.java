@@ -37,43 +37,43 @@ public interface OrientSqlConstants {
   /** RegularExpression Id. */
   int WHILE = 17;
   /** RegularExpression Id. */
-  int UNTIL = 18;
+  int INTO = 18;
   /** RegularExpression Id. */
-  int INTO = 19;
+  int VALUES = 19;
   /** RegularExpression Id. */
-  int VALUES = 20;
+  int SET = 20;
   /** RegularExpression Id. */
-  int SET = 21;
+  int ADD = 21;
   /** RegularExpression Id. */
-  int ADD = 22;
+  int PUT = 22;
   /** RegularExpression Id. */
-  int PUT = 23;
+  int MERGE = 23;
   /** RegularExpression Id. */
-  int MERGE = 24;
+  int CONTENT = 24;
   /** RegularExpression Id. */
-  int CONTENT = 25;
+  int REMOVE = 25;
   /** RegularExpression Id. */
-  int REMOVE = 26;
+  int INCREMENT = 26;
   /** RegularExpression Id. */
-  int INCREMENT = 27;
+  int AND = 27;
   /** RegularExpression Id. */
-  int AND = 28;
+  int OR = 28;
   /** RegularExpression Id. */
-  int OR = 29;
+  int NULL = 29;
   /** RegularExpression Id. */
-  int NULL = 30;
+  int DEFINED = 30;
   /** RegularExpression Id. */
-  int DEFINED = 31;
+  int ORDER = 31;
   /** RegularExpression Id. */
-  int ORDER = 32;
+  int GROUP = 32;
   /** RegularExpression Id. */
-  int GROUP = 33;
+  int BY = 33;
   /** RegularExpression Id. */
-  int BY = 34;
+  int LIMIT = 34;
   /** RegularExpression Id. */
-  int LIMIT = 35;
+  int SKIP2 = 35;
   /** RegularExpression Id. */
-  int SKIP2 = 36;
+  int BATCH = 36;
   /** RegularExpression Id. */
   int OFFSET = 37;
   /** RegularExpression Id. */
@@ -344,7 +344,6 @@ public interface OrientSqlConstants {
     "<TO>",
     "<WHERE>",
     "<WHILE>",
-    "<UNTIL>",
     "<INTO>",
     "<VALUES>",
     "<SET>",
@@ -363,6 +362,7 @@ public interface OrientSqlConstants {
     "<BY>",
     "<LIMIT>",
     "<SKIP2>",
+    "<BATCH>",
     "<OFFSET>",
     "<TIMEOUT>",
     "<ASC>",
