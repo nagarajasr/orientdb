@@ -19,14 +19,6 @@
  */
 package com.orientechnologies.orient.console;
 
-import java.io.*;
-import java.lang.reflect.Array;
-import java.util.*;
-import java.util.Map.Entry;
-
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
 import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.common.console.TTYConsoleReader;
 import com.orientechnologies.common.console.annotation.ConsoleCommand;
@@ -92,6 +84,13 @@ import com.orientechnologies.orient.core.storage.impl.local.paginated.OClusterPa
 import com.orientechnologies.orient.core.storage.impl.local.paginated.OLocalPaginatedStorage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.OPaginatedCluster;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.OPaginatedClusterDebug;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
+import java.io.*;
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutputListener, OProgressListener {
   protected static final int    DEFAULT_WIDTH      = 150;
@@ -1165,12 +1164,9 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
     }
   }
 
-  @ConsoleCommand(aliases = { "desc" }, description = "Display the schema of a class")
+  @ConsoleCommand(aliases = { "desc" }, description = "Display a class in the schema")
   public void infoClass(@ConsoleParameter(name = "class-name", description = "The name of the class") final String iClassName) {
-    if (currentDatabaseName == null) {
-      message("\nNo database selected yet.");
-      return;
-    }
+    checkForDatabase();
 
     final OClass cls = currentDatabase.getMetadata().getImmutableSchemaSnapshot().getClass(iClassName);
 
@@ -1179,7 +1175,8 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
       return;
     }
 
-    message("\nClass................: " + cls);
+    message("\nCLASS '" + cls.getName() + "'\n");
+
     if (cls.getShortName() != null)
       message("\nAlias................: " + cls.getShortName());
     if (cls.hasSuperClasses())
@@ -1203,7 +1200,7 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
     }
 
     if (cls.properties().size() > 0) {
-      message("\nPROPERTIES");
+      message("\n\nPROPERTIES");
       message("\n-------------------------------+-------------+-------------------------------+-----------+----------+----------+-----------+-----------+----------+");
       message("\n NAME                          | TYPE        | LINKED TYPE/CLASS             | MANDATORY | READONLY | NOT NULL |    MIN    |    MAX    | COLLATE  |");
       message("\n-------------------------------+-------------+-------------------------------+-----------+----------+----------+-----------+-----------+----------+");
@@ -1221,6 +1218,99 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
     }
 
     final Set<OIndex<?>> indexes = cls.getClassIndexes();
+    if (!indexes.isEmpty()) {
+      message("\n\nINDEXES (" + indexes.size() + " altogether)");
+      message("\n-------------------------------+----------------+");
+      message("\n NAME                          | PROPERTIES     |");
+      message("\n-------------------------------+----------------+");
+      for (final OIndex<?> index : indexes) {
+        final OIndexDefinition indexDefinition = index.getDefinition();
+        if (indexDefinition != null) {
+          final List<String> fields = indexDefinition.getFields();
+          message("\n %-30s| %-15s|", index.getName(), fields.get(0) + (fields.size() > 1 ? " (+)" : ""));
+
+          for (int i = 1; i < fields.size(); i++) {
+            if (i < fields.size() - 1)
+              message("\n %-30s| %-15s|", "", fields.get(i) + " (+)");
+            else
+              message("\n %-30s| %-15s|", "", fields.get(i));
+          }
+        } else {
+          message("\n %-30s| %-15s|", index.getName(), "");
+        }
+      }
+      message("\n-------------------------------+----------------+");
+    }
+
+    if (cls.getCustomKeys().size() > 0) {
+      message("\n\nCUSTOM ATTRIBUTES");
+      message("\n-------------------------------+-----------------------------------------+");
+      message("\n NAME                          | VALUE                                   |");
+      message("\n-------------------------------+-----------------------------------------+");
+
+      for (final String k : cls.getCustomKeys()) {
+        try {
+          message("\n %-30s| %-40s|", k, cls.getCustom(k));
+        } catch (Exception ignored) {
+        }
+      }
+      message("\n-------------------------------+-----------------------------------------+");
+    }
+  }
+
+  @ConsoleCommand(description = "Display a class property")
+  public void infoProperty(
+      @ConsoleParameter(name = "property-name", description = "The name of the property as <class>.<property>") final String iPropertyName) {
+    checkForDatabase();
+
+    if (iPropertyName.indexOf('.') == -1)
+      throw new OException("Property name is in the format <class>.<property>");
+
+    final String[] parts = iPropertyName.split("\\.");
+
+    final OClass cls = currentDatabase.getMetadata().getImmutableSchemaSnapshot().getClass(parts[0]);
+
+    if (cls == null) {
+      message("\n! Class '" + parts[0] + "' does not exist in the database '" + currentDatabaseName + "'");
+      return;
+    }
+
+    final OProperty prop = cls.getProperty(parts[1]);
+
+    if (prop == null) {
+      message("\n! Property '" + parts[1] + "' does not exist in class '" + parts[0] + "'");
+      return;
+    }
+
+    message("\nPROPERTY '" + prop.getFullName() + "'\n");
+    message("\nType.................: " + prop.getType());
+    message("\nMandatory............: " + prop.isMandatory());
+    message("\nNot null.............: " + prop.isNotNull());
+    message("\nRead only............: " + prop.isReadonly());
+    message("\nDefault value........: " + prop.getDefaultValue());
+    message("\nMinimum value........: " + prop.getMin());
+    message("\nMaximum value........: " + prop.getMax());
+    message("\nREGEXP...............: " + prop.getRegexp());
+    message("\nCollate..............: " + prop.getCollate());
+    message("\nLinked class.........: " + prop.getLinkedClass());
+    message("\nLinked type..........: " + prop.getLinkedType());
+
+    if (prop.getCustomKeys().size() > 0) {
+      message("\n\nCUSTOM ATTRIBUTES");
+      message("\n-------------------------------+-----------------------------------------+");
+      message("\n NAME                          | VALUE                                   |");
+      message("\n-------------------------------+-----------------------------------------+");
+
+      for (final String k : prop.getCustomKeys()) {
+        try {
+          message("\n %-30s| %-40s|", k, prop.getCustom(k));
+        } catch (Exception ignored) {
+        }
+      }
+      message("\n-------------------------------+-----------------------------------------+");
+    }
+
+    final Collection<OIndex<?>> indexes = prop.getAllIndexes();
     if (!indexes.isEmpty()) {
       message("\n\nINDEXES (" + indexes.size() + " altogether)");
       message("\n-------------------------------+----------------+");
@@ -1970,7 +2060,7 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
   }
 
   /** Should be used only by console commands */
-  public void checkForRemoteServer() {
+  protected void checkForRemoteServer() {
     if (serverAdmin == null
         && (currentDatabase == null || !(currentDatabase.getStorage() instanceof OStorageRemoteThread) || currentDatabase
             .isClosed()))
@@ -1978,7 +2068,7 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
   }
 
   /** Should be used only by console commands */
-  public void checkForDatabase() {
+  protected void checkForDatabase() {
     if (currentDatabase == null)
       throw new OException("Database not selected. Use 'connect <database-name>' to connect to a database.");
     if (currentDatabase.isClosed())
@@ -1986,7 +2076,7 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
   }
 
   /** Should be used only by console commands */
-  public void checkCurrentObject() {
+  protected void checkCurrentObject() {
     if (currentRecord == null)
       throw new OException("The is no current object selected: create a new one or load it");
   }
@@ -2190,6 +2280,8 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
   @Override
   protected String getContext() {
     if (currentDatabase != null && currentDatabaseName != null) {
+      currentDatabase.activateOnCurrentThread();
+
       final StringBuilder buffer = new StringBuilder(64);
       buffer.append(" {db=");
       buffer.append(currentDatabaseName);
