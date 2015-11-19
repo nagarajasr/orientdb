@@ -19,23 +19,6 @@
  */
 package com.orientechnologies.orient.server.network.protocol.http;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.IllegalFormatException;
-import java.util.InputMismatchException;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-
 import com.orientechnologies.common.concur.lock.OLockException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.Orient;
@@ -75,6 +58,23 @@ import com.orientechnologies.orient.server.network.protocol.http.command.put.OSe
 import com.orientechnologies.orient.server.network.protocol.http.command.put.OServerCommandPutIndex;
 import com.orientechnologies.orient.server.network.protocol.http.multipart.OHttpMultipartBaseInputStream;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.IllegalFormatException;
+import java.util.InputMismatchException;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+
 public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol {
   private static final String          COMMAND_SEPARATOR = "|";
   private static final Charset         utf8              = Charset.forName("utf8");
@@ -91,6 +91,7 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol {
   private boolean                      jsonResponseError;
   private String[]                     additionalResponseHeaders;
   private String                       listeningAddress  = "?";
+  private OContextConfiguration        configuration;
 
   public ONetworkProtocolHttpAbstract() {
     super(Orient.instance().getThreadGroup(), "IO-HTTP");
@@ -99,6 +100,7 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol {
   @Override
   public void config(final OServerNetworkListener iListener, final OServer iServer, final Socket iSocket,
       final OContextConfiguration iConfiguration) throws IOException {
+    configuration = iConfiguration;
     registerStatelessCommands(iListener);
 
     final String addHeaders = iConfiguration.getValueAsString("network.http.additionalResponseHeaders", null);
@@ -118,8 +120,6 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol {
     channel = new OChannelTextServer(iSocket, iConfiguration);
     channel.connected();
 
-    request = new OHttpRequest(this, channel.inStream, connection.data, iConfiguration);
-
     connection.data.caller = channel.toString();
 
     listeningAddress = getListeningAddress();
@@ -133,7 +133,7 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol {
     connection.data.commandDetail = null;
 
     final String callbackF;
-    if ((request.parameters != null) && request.parameters.containsKey(OHttpUtils.CALLBACK_PARAMETER_NAME))
+    if (OGlobalConfiguration.NETWORK_HTTP_JSONP_ENABLED.getValueAsBoolean() && request.parameters != null && request.parameters.containsKey(OHttpUtils.CALLBACK_PARAMETER_NAME))
       callbackF = request.parameters.get(OHttpUtils.CALLBACK_PARAMETER_NAME);
     else
       callbackF = null;
@@ -231,6 +231,14 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol {
       if (OLogManager.instance().isDebugEnabled())
         OLogManager.instance().debug(this, "Connection shutdowned");
     }
+  }
+
+  public OHttpRequest getRequest() {
+    return request;
+  }
+
+  public OHttpResponse getResponse() {
+    return response;
   }
 
   @Override
@@ -570,6 +578,8 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol {
       channel.socket.setSoTimeout(socketTimeout);
       connection.data.lastCommandReceived = Orient.instance().getProfiler().startChrono();
 
+      request = new OHttpRequest(this, channel.inStream, connection.data, configuration);
+
       requestContent.setLength(0);
       request.isMultipart = false;
 
@@ -648,6 +658,9 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol {
             .getProfiler()
             .stopChrono("server.network.requests", "Total received requests", connection.data.lastCommandReceived,
                 "server.network.requests");
+
+      request = null;
+      response = null;
     }
   }
 

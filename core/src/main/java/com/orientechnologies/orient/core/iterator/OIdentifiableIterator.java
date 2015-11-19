@@ -19,10 +19,6 @@
  */
 package com.orientechnologies.orient.core.iterator;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -30,10 +26,18 @@ import com.orientechnologies.orient.core.db.record.ORecordOperation;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
+import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.metadata.security.ORule;
+import com.orientechnologies.orient.core.metadata.security.OSecurityUser;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordInternal;
+import com.orientechnologies.orient.core.storage.OCluster;
 import com.orientechnologies.orient.core.storage.OPhysicalPosition;
 import com.orientechnologies.orient.core.storage.OStorage;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Iterator class to browse forward and backward the records of a cluster. Once browsed in a direction, the iterator cannot change
@@ -46,7 +50,6 @@ public abstract class OIdentifiableIterator<REC extends OIdentifiable> implement
   protected final ORecordId                 current                = new ORecordId();
   private final ODatabaseDocumentInternal   lowLevelDatabase;
   private final OStorage                    dbStorage;
-  private final boolean                     useCache;
   private final boolean                     iterateThroughTombstones;
   protected boolean                         liveUpdated            = false;
   protected long                            limit                  = -1;
@@ -64,22 +67,19 @@ public abstract class OIdentifiableIterator<REC extends OIdentifiable> implement
   private long                              currentEntry           = ORID.CLUSTER_POS_INVALID;
   private int                               currentEntryPosition   = -1;
   private OPhysicalPosition[]               positionsToProcess     = null;
-  protected boolean                         updateCache            = false;
 
-  public OIdentifiableIterator(final ODatabaseDocumentInternal iDatabase, final ODatabaseDocumentInternal iLowLevelDatabase,
-      final boolean useCache) {
-    this(iDatabase, iLowLevelDatabase, useCache, false, OStorage.LOCKING_STRATEGY.NONE);
+  public OIdentifiableIterator(final ODatabaseDocumentInternal iDatabase, final ODatabaseDocumentInternal iLowLevelDatabase) {
+    this(iDatabase, iLowLevelDatabase, false, OStorage.LOCKING_STRATEGY.NONE);
   }
 
   @Deprecated
   /**
    * @deprecated usage of this constructor may lead to deadlocks.
    */public OIdentifiableIterator(final ODatabaseDocumentInternal iDatabase, final ODatabaseDocumentInternal iLowLevelDatabase,
-      final boolean useCache, final boolean iterateThroughTombstones, final OStorage.LOCKING_STRATEGY iLockingStrategy) {
+      final boolean iterateThroughTombstones, final OStorage.LOCKING_STRATEGY iLockingStrategy) {
     database = iDatabase;
     lowLevelDatabase = iLowLevelDatabase;
     this.iterateThroughTombstones = iterateThroughTombstones;
-    this.useCache = useCache;
     lockingStrategy = iLockingStrategy;
 
     dbStorage = lowLevelDatabase.getStorage();
@@ -282,9 +282,9 @@ public abstract class OIdentifiableIterator<REC extends OIdentifiable> implement
       try {
         if (iRecord != null) {
           ORecordInternal.setIdentity(iRecord, new ORecordId(current.clusterId, current.clusterPosition));
-          iRecord = lowLevelDatabase.load(iRecord, fetchPlan, !useCache, updateCache, iterateThroughTombstones, lockingStrategy);
+          iRecord = lowLevelDatabase.load(iRecord, fetchPlan, false, true, iterateThroughTombstones, lockingStrategy);
         } else
-          iRecord = lowLevelDatabase.load(current, fetchPlan, !useCache, updateCache, iterateThroughTombstones, lockingStrategy);
+          iRecord = lowLevelDatabase.load(current, fetchPlan, false, true, iterateThroughTombstones, lockingStrategy);
       } catch (ODatabaseException e) {
         if (Thread.interrupted() || lowLevelDatabase.isClosed())
           // THREAD INTERRUPTED: RETURN
@@ -384,6 +384,18 @@ public abstract class OIdentifiableIterator<REC extends OIdentifiable> implement
 
   protected long currentPosition() {
     return currentEntry;
+  }
+
+  protected void checkForSystemClusters(final ODatabaseDocumentInternal iDatabase, final int[] iClusterIds) {
+    for (int clId : iClusterIds) {
+      final OCluster cl = iDatabase.getStorage().getClusterById(clId);
+      if (cl != null && cl.isSystemCluster()) {
+        final OSecurityUser dbUser = iDatabase.getUser();
+        if (dbUser == null || dbUser.allow(ORule.ResourceGeneric.SYSTEM_CLUSTERS, null, ORole.PERMISSION_READ) != null)
+          // AUTHORIZED
+          break;
+      }
+    }
   }
 
   private void decrementEntreePosition() {

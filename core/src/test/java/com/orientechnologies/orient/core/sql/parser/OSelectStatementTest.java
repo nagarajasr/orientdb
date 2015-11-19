@@ -14,7 +14,8 @@ import static org.testng.Assert.*;
 public class OSelectStatementTest {
 
   protected SimpleNode checkRightSyntax(String query) {
-    return checkSyntax(query, true);
+    SimpleNode result = checkSyntax(query, true);
+    return checkSyntax(result.toString(), true);
   }
 
   protected SimpleNode checkWrongSyntax(String query) {
@@ -64,6 +65,25 @@ public class OSelectStatementTest {
     assertTrue(select.getTarget() != null);
     assertTrue(!Boolean.TRUE.equals(select.getLockRecord()));
     assertTrue(select.getWhereClause() == null);
+  }
+
+  @Test
+  public void testComments() {
+    checkRightSyntax("select from Foo");
+
+    checkRightSyntax("select /* aaa bbb ccc*/from Foo");
+    checkRightSyntax("select /* aaa bbb \nccc*/from Foo");
+    checkRightSyntax("select /** aaa bbb ccc**/from Foo");
+    checkRightSyntax("select /** aaa bbb ccc*/from Foo");
+
+    checkRightSyntax("/* aaa bbb ccc*/select from Foo");
+    checkRightSyntax("select from Foo/* aaa bbb ccc*/");
+    checkRightSyntax("/* aaa bbb ccc*/select from Foo/* aaa bbb ccc*/");
+
+    checkWrongSyntax("select /** aaa bbb */ccc*/from Foo");
+
+    checkWrongSyntax("select /**  /*aaa bbb */ccc*/from Foo");
+    checkWrongSyntax("*/ select from Foo");
   }
 
   @Test
@@ -422,13 +442,11 @@ public class OSelectStatementTest {
     checkRightSyntax("select from Foo where a lucene 'a'");
     checkWrongSyntax("select from Foo where a lucene 'a' and b lucene 'a'");
 
-    checkWrongSyntax(
-        "select union($a, $b) let $a = (select from Foo where a lucene 'a' and b lucene 'b'), $b = (select from Foo where b lucene 'b')");
+    checkWrongSyntax("select union($a, $b) let $a = (select from Foo where a lucene 'a' and b lucene 'b'), $b = (select from Foo where b lucene 'b')");
     checkRightSyntax("select union($a, $b) let $a = (select from Foo where a lucene 'a'), $b = (select from Foo where b lucene 'b')");
     checkWrongSyntax("select from (select from Foo) where a lucene 'a'");
 
-    checkWrongSyntax(
-        "select from Foo where (a=2 and b=3 and (a = 4 and (b=5 and d lucene 'foo')))) or select from Foo where (a=2 and b=3 and (a = 4 and (b=5 and d lucene 'foo'))))");
+    checkWrongSyntax("select from Foo where (a=2 and b=3 and (a = 4 and (b=5 and d lucene 'foo')))) or select from Foo where (a=2 and b=3 and (a = 4 and (b=5 and d lucene 'foo'))))");
 
     checkWrongSyntax("select from cluster:foo where a lucene 'b'");
     checkRightSyntax("select from index:foo where a lucene 'b'");
@@ -437,7 +455,7 @@ public class OSelectStatementTest {
 
   }
 
-  public void testBacktick(){
+  public void testBacktick() {
     checkRightSyntax("select `foo` from foo where `foo` = 'bar'");
     checkRightSyntax("select `SELECT` from foo where `SELECT` = 'bar'");
     checkRightSyntax("select `TRAVERSE` from foo where `TRAVERSE` = 'bar'");
@@ -555,9 +573,43 @@ public class OSelectStatementTest {
     checkRightSyntax("select `instanceof` from foo where `instanceof` = 'bar'");
     checkRightSyntax("select `cluster` from foo where `cluster` = 'bar'");
 
+    checkRightSyntax("select `foo-bar` from foo where `cluster` = 'bar'");
+
     checkWrongSyntax("select `cluster from foo where `cluster` = 'bar'");
     checkWrongSyntax("select `cluster from foo where cluster` = 'bar'");
 
+  }
+
+  @Test
+  public void testReturn() {
+    checkRightSyntax("select from ouser timeout 1 exception");
+    checkRightSyntax("select from ouser timeout 1 return");
+
+  }
+
+
+  @Test
+  public void testDefined() {
+    checkRightSyntax("select from foo where bar is defined");
+    checkRightSyntax("select from foo where bar is not defined");
+
+  }
+
+  @Test
+  public void testRecordAttributeAsAlias() {
+    checkRightSyntax("select @rid as @rid from foo ");
+  }
+
+  @Test
+  public void testParamWithMatches() {
+    //issue #5229
+    checkRightSyntax("select from Person where name matches :param1");
+  }
+
+  @Test
+  public void testInstanceOfE(){
+    //issue #5212
+    checkRightSyntax("select from Friend where @class instanceof 'E'");
   }
 
   private void printTree(String s) {

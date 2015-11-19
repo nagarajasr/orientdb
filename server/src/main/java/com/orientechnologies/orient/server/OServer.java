@@ -88,7 +88,7 @@ public class OServer {
   private static Map<String, OServer>                      distributedServers     = new ConcurrentHashMap<String, OServer>();
   private final CountDownLatch                             startupLatch           = new CountDownLatch(1);
   protected ReentrantLock                                  lock                   = new ReentrantLock();
-  protected volatile boolean                               running                = true;
+  protected volatile boolean                               running                = false;
   protected OServerConfigurationLoaderXml                  configurationLoader;
   protected OServerConfiguration                           configuration;
   protected OContextConfiguration                          contextConfiguration;
@@ -162,6 +162,13 @@ public class OServer {
 
   public OClientConnectionManager getClientConnectionManager() {
     return clientConnectionManager;
+  }
+
+  public void restart() throws ClassNotFoundException, InvocationTargetException, InstantiationException, NoSuchMethodException,
+      IllegalAccessException {
+    shutdown();
+    startup(configuration);
+    activate();
   }
 
   /**
@@ -340,6 +347,8 @@ public class OServer {
 
       for (OServerLifecycleListener l : lifecycleListeners)
         l.onAfterActivate();
+
+      running = true;
 
       OLogManager.instance().info(this, "OrientDB Server v" + OConstants.getVersion() + " is active.");
     } catch (ClassNotFoundException e) {
@@ -603,7 +612,7 @@ public class OServer {
   }
 
   public Collection<OServerPluginInfo> getPlugins() {
-    return pluginManager.getPlugins();
+    return pluginManager != null ? pluginManager.getPlugins() : null;
   }
 
   public OContextConfiguration getContextConfiguration() {

@@ -289,7 +289,7 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph implements
    * (Internal) Returns the case sensitive edge class names.
    */
   public static void getEdgeClassNames(final OrientBaseGraph graph, final String... iLabels) {
-    if (iLabels != null && graph.isUseClassForEdgeLabel()) {
+    if (iLabels != null && graph != null && graph.isUseClassForEdgeLabel()) {
       for (int i = 0; i < iLabels.length; ++i) {
         final OrientEdgeType edgeType = graph.getEdgeType(iLabels[i]);
         if (edgeType != null)
@@ -829,13 +829,14 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph implements
     String indexName;
     final String key;
     int pos = iKey.indexOf('.');
+    OClass clazz = null;
     if (pos > -1) {
       indexName = iKey;
 
       final String className = iKey.substring(0, pos);
       key = iKey.substring(iKey.indexOf('.') + 1);
 
-      final OClass clazz = database.getMetadata().getImmutableSchemaSnapshot().getClass(className);
+      clazz = database.getMetadata().getImmutableSchemaSnapshot().getClass(className);
 
       final Collection<? extends OIndex<?>> indexes = clazz.getIndexes();
       for (OIndex<?> index : indexes) {
@@ -865,7 +866,10 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph implements
     }
 
     // NO INDEX: EXECUTE A QUERY
-    return query().has(key, iValue).vertices();
+    OrientGraphQuery query = (OrientGraphQuery) query();
+    if (clazz != null)
+      query.labels(clazz.getName());
+    return query.has(key, iValue).vertices();
   }
 
   /**

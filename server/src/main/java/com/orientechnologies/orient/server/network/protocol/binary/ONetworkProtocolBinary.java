@@ -19,18 +19,6 @@
  */
 package com.orientechnologies.orient.server.network.protocol.binary;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.net.SocketException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-
 import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.common.concur.lock.OLockException;
 import com.orientechnologies.common.exception.OException;
@@ -107,6 +95,18 @@ import com.orientechnologies.orient.server.plugin.OServerPlugin;
 import com.orientechnologies.orient.server.plugin.OServerPluginHelper;
 import com.orientechnologies.orient.server.security.OSecurityServerUser;
 import com.orientechnologies.orient.server.tx.OTransactionOptimisticProxy;
+
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.UUID;
 
 public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
   protected OClientConnection connection;
@@ -1044,7 +1044,7 @@ public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
       connection.database.drop();
       connection.close();
     } else {
-      throw new OStorageException("Database with name '" + dbName + "' doesn't exits.");
+      throw new OStorageException("Database with name '" + dbName + "' does not exist");
     }
 
     beginResponse();
@@ -1171,8 +1171,13 @@ public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
     final String key = channel.readString();
     final String value = channel.readString();
     final OGlobalConfiguration cfg = OGlobalConfiguration.findByKey(key);
-    if (cfg != null)
+
+    if (cfg != null) {
       cfg.setValue(value);
+      if (!cfg.isChangeableAtRuntime())
+        throw new OConfigurationException("Property '" + key + "' cannot be changed at runtime. Change the setting at startup");
+    } else
+      throw new OConfigurationException("Property '" + key + "' was not found in global configuration");
 
     beginResponse();
     try {
@@ -1388,6 +1393,42 @@ public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
           writeIdentifiable(null);
         }
       }
+    } else if (OMultiValue.isIterable(result)) {
+      if (connection.data.protocolVersion >= OChannelBinaryProtocol.PROTOCOL_VERSION_32) {
+        channel.writeByte((byte) 'i');
+        for (Object o : OMultiValue.getMultiValueIterable(result)) {
+          try {
+            if (load && o instanceof ORecordId)
+              o = ((ORecordId) o).getRecord();
+            if (listener != null)
+              listener.result(o);
+
+            channel.writeByte((byte) 1); // ONE MORE RECORD
+            writeIdentifiable((OIdentifiable) o);
+          } catch (Exception e) {
+            OLogManager.instance().warn(this, "Cannot serialize record: " + o);
+          }
+        }
+        channel.writeByte((byte) 0); // NO MORE RECORD
+      } else {
+        // OLD RELEASES: TRANSFORM IN A COLLECTION
+        final byte collectionType = result instanceof Set ? (byte) 's' : (byte) 'l';
+        channel.writeByte(collectionType);
+        channel.writeInt(OMultiValue.getSize(result));
+        for (Object o : OMultiValue.getMultiValueIterable(result)) {
+          try {
+            if (load && o instanceof ORecordId)
+              o = ((ORecordId) o).getRecord();
+            if (listener != null)
+              listener.result(o);
+
+            writeIdentifiable((OIdentifiable) o);
+          } catch (Exception e) {
+            OLogManager.instance().warn(this, "Cannot serialize record: " + o);
+          }
+        }
+      }
+
     } else {
       // ANY OTHER (INCLUDING LITERALS)
       channel.writeByte((byte) 'a');
@@ -1844,7 +1885,7 @@ public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
 
       connection.database.freeze(true);
     } else {
-      throw new OStorageException("Database with name '" + dbName + "' doesn't exits.");
+      throw new OStorageException("Database with name '" + dbName + "' does not exist");
     }
 
     beginResponse();
@@ -1870,14 +1911,14 @@ public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
     connection.database = getDatabaseInstance(dbName, ODatabaseDocument.TYPE, storageType);
 
     if (connection.database.exists()) {
-      OLogManager.instance().info(this, "Realising database '%s'", connection.database.getURL());
+      OLogManager.instance().info(this, "Releasing database '%s'", connection.database.getURL());
 
       if (connection.database.isClosed())
         openDatabase(connection.database, connection.serverUser.name, connection.serverUser.password);
 
       connection.database.release();
     } else {
-      throw new OStorageException("Database with name '" + dbName + "' doesn't exits.");
+      throw new OStorageException("Database with name '" + dbName + "' does not exist");
     }
 
     beginResponse();
@@ -1913,7 +1954,7 @@ public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
 
       connection.database.freezeCluster(clusterId);
     } else {
-      throw new OStorageException("Database with name '" + dbName + "' doesn't exits.");
+      throw new OStorageException("Database with name '" + dbName + "' does not exist");
     }
 
     beginResponse();
@@ -1948,7 +1989,7 @@ public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
 
       connection.database.releaseCluster(clusterId);
     } else {
-      throw new OStorageException("Database with name '" + dbName + "' doesn't exits.");
+      throw new OStorageException("Database with name '" + dbName + "' does not exist");
     }
 
     beginResponse();
@@ -1990,7 +2031,7 @@ public class ONetworkProtocolBinary extends OBinaryNetworkProtocolAbstract {
 
       channel.writeBytes(result);
     } catch (Exception e) {
-      OLogManager.instance().warn(this, "Can't serialize an exception object", e);
+      OLogManager.instance().warn(this, "Cannot serialize an exception object", e);
 
       // Write empty stream for binary compatibility
       channel.writeBytes(OCommonConst.EMPTY_BYTE_ARRAY);

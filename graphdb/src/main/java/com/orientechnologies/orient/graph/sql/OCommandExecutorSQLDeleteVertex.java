@@ -114,7 +114,7 @@ public class OCommandExecutorSQLDeleteVertex extends OCommandExecutorSQLAbstract
             clazz = ((OMetadataInternal) database.getMetadata()).getImmutableSchemaSnapshot().getClass(OrientVertexType.CLASS_NAME);
 
           where = parserGetCurrentPosition() > -1 ? " " + parserText.substring(parserGetPreviousPosition()) : "";
-          query = database.command(new OSQLAsynchQuery<ODocument>("select from " + clazz.getName() + where, this));
+          query = database.command(new OSQLAsynchQuery<ODocument>("select from `" + clazz.getName() + "`" + where, this));
           break;
 
         } else if (word.equals(KEYWORD_LIMIT)) {
@@ -151,12 +151,14 @@ public class OCommandExecutorSQLDeleteVertex extends OCommandExecutorSQLAbstract
 
       if (query == null && rid == null) {
         StringBuilder queryString = new StringBuilder();
-        queryString.append("select from ");
+        queryString.append("select from `");
         if (clazz == null) {
           queryString.append(OrientVertexType.CLASS_NAME);
         } else {
           queryString.append(clazz.getName());
         }
+        queryString.append("`");
+
         queryString.append(where);
         if (limit > -1) {
           queryString.append(" LIMIT ").append(limit);
@@ -261,7 +263,7 @@ public class OCommandExecutorSQLDeleteVertex extends OCommandExecutorSQLAbstract
   }
 
   @Override
-  public long getTimeout() {
+  public long getDistributedTimeout() {
     return OGlobalConfiguration.DISTRIBUTED_COMMAND_TASK_SYNCH_TIMEOUT.getValueAsLong();
   }
 
@@ -305,10 +307,6 @@ public class OCommandExecutorSQLDeleteVertex extends OCommandExecutorSQLAbstract
     return QUORUM_TYPE.WRITE;
   }
 
-  public OCommandDistributedReplicateRequest.DISTRIBUTED_EXECUTION_MODE getDistributedExecutionMode() {
-    return query == null ? DISTRIBUTED_EXECUTION_MODE.LOCAL : DISTRIBUTED_EXECUTION_MODE.REPLICATE;
-  }
-
   public DISTRIBUTED_RESULT_MGMT getDistributedResultManagement() {
     return getDistributedExecutionMode() == DISTRIBUTED_EXECUTION_MODE.LOCAL ? DISTRIBUTED_RESULT_MGMT.CHECK_FOR_EQUALS
         : DISTRIBUTED_RESULT_MGMT.MERGE;
@@ -329,4 +327,9 @@ public class OCommandExecutorSQLDeleteVertex extends OCommandExecutorSQLAbstract
     return result;
   }
 
+  @Override
+  public OCommandDistributedReplicateRequest.DISTRIBUTED_EXECUTION_MODE getDistributedExecutionMode() {
+    return query != null && !getDatabase().getTransaction().isActive() ? DISTRIBUTED_EXECUTION_MODE.REPLICATE
+        : DISTRIBUTED_EXECUTION_MODE.LOCAL;
+  }
 }

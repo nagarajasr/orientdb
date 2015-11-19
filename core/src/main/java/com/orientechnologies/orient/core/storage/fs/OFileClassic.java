@@ -19,7 +19,12 @@
  */
 package com.orientechnologies.orient.core.storage.fs;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.RandomAccessFile;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
@@ -106,7 +111,7 @@ public class OFileClassic implements OFile {
           attempts++;
         }
       } catch (IOException e) {
-        OLogManager.instance().error(this, "Error during file shrink for file " + getName() + " " + attempts + "-th attempt.", e);
+        OLogManager.instance().error(this, "Error during file shrink for file " + getName() + " " + attempts + "-th attempt", e);
         reopenFile(attempts, e);
       }
     }
@@ -135,7 +140,7 @@ public class OFileClassic implements OFile {
           attempts++;
         }
       } catch (IOException e) {
-        OLogManager.instance().error(this, "Error during data read for file " + getName() + " " + attempts + "-th attempt.", e);
+        OLogManager.instance().error(this, "Error during data read for file " + getName() + " " + attempts + "-th attempt", e);
         reopenFile(attempts, e);
       }
     }
@@ -155,7 +160,7 @@ public class OFileClassic implements OFile {
           attempts++;
         }
       } catch (IOException e) {
-        OLogManager.instance().error(this, "Error during data write for file  " + getName() + " " + attempts + "-th attempt.", e);
+        OLogManager.instance().error(this, "Error during data write for file  " + getName() + " " + attempts + "-th attempt", e);
         reopenFile(attempts, e);
       }
     }
@@ -211,8 +216,8 @@ public class OFileClassic implements OFile {
           attempts++;
         }
       } catch (IOException e) {
-        OLogManager.instance().error(this,
-            "Error during read of long data for file " + getName() + " " + attempts + "-th attempt.", e);
+        OLogManager.instance().error(this, "Error during read of long data for file " + getName() + " " + attempts + "-th attempt",
+            e);
         reopenFile(attempts, e);
       }
     }
@@ -234,7 +239,7 @@ public class OFileClassic implements OFile {
         }
       } catch (IOException e) {
         OLogManager.instance().error(this,
-            "Error during read of short data for file " + getName() + " " + attempts + "-th attempt.", e);
+            "Error during read of short data for file " + getName() + " " + attempts + "-th attempt", e);
         reopenFile(attempts, e);
       }
     }
@@ -255,8 +260,8 @@ public class OFileClassic implements OFile {
           attempts++;
         }
       } catch (IOException e) {
-        OLogManager.instance().error(this,
-            "Error during read of byte data for file " + getName() + " " + attempts + "-th attempt.", e);
+        OLogManager.instance().error(this, "Error during read of byte data for file " + getName() + " " + attempts + "-th attempt",
+            e);
         reopenFile(attempts, e);
       }
     }
@@ -283,8 +288,8 @@ public class OFileClassic implements OFile {
           attempts++;
         }
       } catch (IOException e) {
-        OLogManager.instance().error(this,
-            "Error during write of int data for file " + getName() + " " + attempts + "-th attempt.", e);
+        OLogManager.instance().error(this, "Error during write of int data for file " + getName() + " " + attempts + "-th attempt",
+            e);
         reopenFile(attempts, e);
       }
     }
@@ -310,7 +315,7 @@ public class OFileClassic implements OFile {
         }
       } catch (IOException e) {
         OLogManager.instance().error(this,
-            "Error during write of long data for file " + getName() + " " + attempts + "-th attempt.", e);
+            "Error during write of long data for file " + getName() + " " + attempts + "-th attempt", e);
         reopenFile(attempts, e);
       }
     }
@@ -336,7 +341,7 @@ public class OFileClassic implements OFile {
         }
       } catch (IOException e) {
         OLogManager.instance().error(this,
-            "Error during write of short data for file " + getName() + " " + attempts + "-th attempt.", e);
+            "Error during write of short data for file " + getName() + " " + attempts + "-th attempt", e);
         reopenFile(attempts, e);
       }
     }
@@ -361,7 +366,7 @@ public class OFileClassic implements OFile {
         }
       } catch (IOException e) {
         OLogManager.instance().error(this,
-            "Error during write of byte data for file " + getName() + " " + attempts + "-th attempt.", e);
+            "Error during write of byte data for file " + getName() + " " + attempts + "-th attempt", e);
         reopenFile(attempts, e);
       }
     }
@@ -390,7 +395,7 @@ public class OFileClassic implements OFile {
 
         return allocationDiff;
       } catch (IOException e) {
-        OLogManager.instance().error(this, "Error during write of data for file " + getName() + " " + attempts + "-th attempt.", e);
+        OLogManager.instance().error(this, "Error during write of data for file " + getName() + " " + attempts + "-th attempt", e);
         reopenFile(attempts, e);
       }
     }
@@ -440,45 +445,6 @@ public class OFileClassic implements OFile {
 
       setVersion(OFileClassic.CURRENT_VERSION);
       version = OFileClassic.CURRENT_VERSION;
-      setSoftlyClosed(!failCheck);
-    } finally {
-      releaseWriteLock();
-    }
-  }
-
-  @Override
-  public boolean isSoftlyClosed() throws IOException {
-    acquireReadLock();
-    try {
-      final ByteBuffer buffer;
-      if (version == 0)
-        buffer = readData(SOFTLY_CLOSED_OFFSET_V_0, 1);
-      else
-        buffer = readData(SOFTLY_CLOSED_OFFSET, 1);
-
-      return buffer.get(0) > 0;
-    } finally {
-      releaseReadLock();
-    }
-  }
-
-  public void setSoftlyClosed(final boolean value) throws IOException {
-    acquireWriteLock();
-    try {
-      if (channel == null || mode.indexOf('w') < 0)
-        return;
-
-      final ByteBuffer buffer = getBuffer(1);
-      buffer.put(0, (byte) (value ? 1 : 0));
-
-      writeBuffer(buffer, SOFTLY_CLOSED_OFFSET);
-
-      try {
-        channel.force(true);
-      } catch (IOException e) {
-        OLogManager.instance()
-            .warn(this, "Error during flush of file %s. Data may be lost in case of power failure.", getName(), e);
-      }
     } finally {
       releaseWriteLock();
     }
@@ -554,17 +520,9 @@ public class OFileClassic implements OFile {
 
       OLogManager.instance().debug(this, "Checking file integrity of " + osFile.getName() + "...");
 
-      if (failCheck) {
-        wasSoftlyClosed = isSoftlyClosed();
-
-        if (wasSoftlyClosed)
-          setSoftlyClosed(false);
-      }
-
       if (version < CURRENT_VERSION) {
         setVersion(CURRENT_VERSION);
         version = CURRENT_VERSION;
-        setSoftlyClosed(!failCheck);
       }
 
       if (failCheck)
@@ -608,8 +566,6 @@ public class OFileClassic implements OFile {
       if (accessFile != null && (accessFile.length() - HEADER_SIZE) < getFileSize())
         accessFile.setLength(getFileSize() + HEADER_SIZE);
 
-      setSoftlyClosed(true);
-
       if (OGlobalConfiguration.FILE_LOCK.getValueAsBoolean())
         unlock();
 
@@ -647,7 +603,7 @@ public class OFileClassic implements OFile {
           retryCount++;
 
           if (retryCount > 10)
-            throw new IOException("Can not delete file. Retry limit exceeded.");
+            throw new IOException("Cannot delete file. Retry limit exceeded");
         }
       }
     } finally {
@@ -711,7 +667,7 @@ public class OFileClassic implements OFile {
           throw new OLockException(
               "File '"
                   + osFile.getPath()
-                  + "' is locked by another process, maybe the database is in use by another process. Use the remote mode with a OrientDB server to allow multiple access to the same database.");
+                  + "' is locked by another process, maybe the database is in use by another process. Use the remote mode with a OrientDB server to allow multiple access to the same database");
       }
     } finally {
       releaseWriteLock();

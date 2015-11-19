@@ -19,12 +19,23 @@
  */
 package com.orientechnologies.orient.server.hazelcast;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
@@ -34,15 +45,7 @@ import com.orientechnologies.orient.server.distributed.ODistributedResponse;
 import com.orientechnologies.orient.server.distributed.ODistributedResponseManager;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog.DIRECTION;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
+import com.orientechnologies.orient.server.distributed.task.OAbstractRemoteTask;
 
 /**
  * Hazelcast implementation of distributed peer. There is one instance per database. Each node creates own instance to talk with
@@ -108,10 +111,19 @@ public class OHazelcastDistributedMessageService implements ODistributedMessageS
 
             if (message != null) {
               senderNode = message.getSenderNodeName();
-              final long responseTime = dispatchResponseToThread(message);
 
-              if (responseTime > -1)
-                collectMetric(responseTime);
+              final long reqId = message.getRequestId();
+              if (reqId < 0) {
+                // REQUEST
+                final OAbstractRemoteTask task = (OAbstractRemoteTask) message.getPayload();
+                task.execute(manager.getServerInstance(), manager, null);
+              } else {
+                // RESPONSE
+                final long responseTime = dispatchResponseToThread(message);
+
+                if (responseTime > -1)
+                  collectMetric(responseTime);
+              }
             }
 
           } catch (InterruptedException e) {
@@ -206,8 +218,9 @@ public class OHazelcastDistributedMessageService implements ODistributedMessageS
   public void handleUnreachableNode(final String nodeName) {
     final Set<String> dbs = getDatabases();
     if (dbs != null)
-      for (String dbName : dbs)
+      for (String dbName : dbs) {
         getDatabase(dbName).removeNodeInConfiguration(nodeName, false);
+      }
 
     // REMOVE THE SERVER'S RESPONSE QUEUE
     // removeQueue(OHazelcastDistributedMessageService.getResponseQueueName(nodeName));
@@ -218,10 +231,10 @@ public class OHazelcastDistributedMessageService implements ODistributedMessageS
 
   @Override
   public List<String> getManagedQueueNames() {
-    List<String> queueNames = new ArrayList<String>();
-    for (String q : manager.getHazelcastInstance().getConfig().getQueueConfigs().keySet()) {
-      if (q.startsWith(NODE_QUEUE_PREFIX))
-        queueNames.add(q);
+    final List<String> queueNames = new ArrayList<String>();
+    for (DistributedObject d : manager.getHazelcastInstance().getDistributedObjects()) {
+      if (d.getServiceName().equals(QueueService.SERVICE_NAME))
+        queueNames.add(d.getName());
     }
     return queueNames;
   }
@@ -331,20 +344,14 @@ public class OHazelcastDistributedMessageService implements ODistributedMessageS
         return System.currentTimeMillis() - asynchMgr.getSentOn();
       }
     } finally {
-      Orient.instance().getProfiler()
-          .stopChrono("distributed.node." + response.getExecutorNodeName() + ".latency", "Latency in ms from current node", chrono);
+      Orient.instance().getProfiler().stopChrono("distributed.node." + response.getExecutorNodeName() + ".latency",
+          "Latency in ms from current node", chrono);
 
-      Orient
-          .instance()
-          .getProfiler()
-          .updateCounter("distributed.node.msgReceived", "Number of replication messages received in current node", +1,
-              "distributed.node.msgReceived");
+      Orient.instance().getProfiler().updateCounter("distributed.node.msgReceived",
+          "Number of replication messages received in current node", +1, "distributed.node.msgReceived");
 
-      Orient
-          .instance()
-          .getProfiler()
-          .updateCounter("distributed.node." + response.getExecutorNodeName() + ".msgReceived",
-              "Number of replication messages received in current node from a node", +1, "distributed.node.*.msgReceived");
+      Orient.instance().getProfiler().updateCounter("distributed.node." + response.getExecutorNodeName() + ".msgReceived",
+          "Number of replication messages received in current node from a node", +1, "distributed.node.*.msgReceived");
     }
 
     return -1;
@@ -374,14 +381,11 @@ public class OHazelcastDistributedMessageService implements ODistributedMessageS
             "%d missed response(s) for message %d by nodes %s after %dms when timeout is %dms", missingNodes.size(),
             resp.getMessageId(), missingNodes, timeElapsed, timeout);
 
-        Orient
-            .instance()
-            .getProfiler()
-            .updateCounter("distributed.db." + resp.getDatabaseName() + ".timeouts", "Number of messages in timeouts", +1,
-                "distributed.db.*.timeouts");
+        Orient.instance().getProfiler().updateCounter("distributed.db." + resp.getDatabaseName() + ".timeouts",
+            "Number of messages in timeouts", +1, "distributed.db.*.timeouts");
 
-        Orient.instance().getProfiler()
-            .updateCounter("distributed.node.timeouts", "Number of messages in timeouts", +1, "distributed.node.timeouts");
+        Orient.instance().getProfiler().updateCounter("distributed.node.timeouts", "Number of messages in timeouts", +1,
+            "distributed.node.timeouts");
 
         resp.timeout();
         it.remove();
@@ -389,7 +393,8 @@ public class OHazelcastDistributedMessageService implements ODistributedMessageS
     }
   }
 
-  protected boolean checkForPendingMessages(final IQueue<?> iQueue, final String iQueueName, final boolean iUnqueuePendingMessages) {
+  protected boolean checkForPendingMessages(final IQueue<?> iQueue, final String iQueueName,
+      final boolean iUnqueuePendingMessages) {
     final int queueSize = iQueue.size();
     if (queueSize > 0) {
       if (!iUnqueuePendingMessages) {

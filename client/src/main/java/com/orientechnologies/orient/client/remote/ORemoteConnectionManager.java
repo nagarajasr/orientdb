@@ -83,7 +83,7 @@ public class ORemoteConnectionManager implements OChannelListener {
 
             @Override
             public boolean reuseResource(final String iKey, final Object[] iAdditionalArgs, final OChannelBinaryAsynchClient iValue) {
-              return true;
+              return iValue.isConnected();
             }
 
           });
@@ -106,7 +106,7 @@ public class ORemoteConnectionManager implements OChannelListener {
       throw e;
     } catch (Exception e) {
       // ERROR ON RETRIEVING THE INSTANCE FROM THE POOL
-      OLogManager.instance().error(this, "Error on retrieving the connection from pool: " + iServerURL, e);
+      OLogManager.instance().debug(this, "Error on retrieving the connection from pool: " + iServerURL, e);
     }
     return null;
   }
@@ -127,13 +127,13 @@ public class ORemoteConnectionManager implements OChannelListener {
     try {
       conn.unlock();
     } catch (Exception e) {
-      OLogManager.instance().debug(this, "Can not unlock connection lock", e);
+      OLogManager.instance().debug(this, "Cannot unlock connection lock", e);
     }
 
     try {
       conn.close();
     } catch (Exception e) {
-      OLogManager.instance().debug(this, "Can not close connection", e);
+      OLogManager.instance().debug(this, "Cannot close connection", e);
     }
 
     final OResourcePool<String, OChannelBinaryAsynchClient> pool = connections.get(conn.getServerURL());
@@ -176,6 +176,15 @@ public class ORemoteConnectionManager implements OChannelListener {
     return pool.getAvailableResources();
   }
 
+  public int getReusableConnections(final String url){
+    final OResourcePool<String, OChannelBinaryAsynchClient> pool = connections.get(url);
+    if (pool == null)
+      return 0;
+
+    return pool.getInPoolResources();
+  }
+
+
   public int getCreatedInstancesInPool(final String url) {
     final OResourcePool<String, OChannelBinaryAsynchClient> pool = connections.get(url);
     if (pool == null)
@@ -200,7 +209,7 @@ public class ORemoteConnectionManager implements OChannelListener {
         c.unregisterListener(this);
         c.close();
       } catch (Exception e) {
-        OLogManager.instance().debug(this, "Can not close binary channel", e);
+        OLogManager.instance().debug(this, "Cannot close binary channel", e);
       }
     pool.close();
   }

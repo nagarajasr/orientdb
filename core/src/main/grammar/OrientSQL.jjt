@@ -64,6 +64,34 @@ SKIP :
 | "\t"
 | "\n"
 | "\r"
+| "\f"
+}
+
+/* COMMENTS */
+
+MORE :
+{
+  <"/**" ~["/"]> { input_stream.backup(1); } : IN_FORMAL_COMMENT
+|
+  "/*" : IN_MULTI_LINE_COMMENT
+}
+
+<IN_FORMAL_COMMENT>
+SPECIAL_TOKEN :
+{
+  <FORMAL_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_MULTI_LINE_COMMENT>
+SPECIAL_TOKEN :
+{
+  <MULTI_LINE_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_FORMAL_COMMENT,IN_MULTI_LINE_COMMENT>
+MORE :
+{
+  < ~[] >
 }
 
 
@@ -73,6 +101,8 @@ TOKEN:
 	< SELECT: ( "s" | "S" ) ( "e" | "E" ) ( "l" | "L" ) ( "e" | "E" ) ( "c" | "C" ) ( "t" | "T" ) >
 	|
 	< TRAVERSE: ( "t" | "T") ( "r" | "R") ( "a" | "A") ( "v" | "V") ( "e" | "E") ( "r" | "R") ( "s" | "S") ( "e" | "E") >
+	|
+	< MATCH: ( "m" | "M" ) ( "a" | "A" ) ( "t" | "T" ) ( "c" | "C" ) ( "h" | "H" ) >
 	|
 	< INSERT: ( "i" | "I" ) ( "n" | "N" ) ( "s" | "S" ) ( "e" | "E" ) ( "r" | "R" ) ( "t" | "T" ) >
 	|
@@ -95,8 +125,6 @@ TOKEN:
 	< WHERE: ( "w" | "W" ) ( "h" | "H" ) ( "e" | "E" ) ( "r" | "R" ) ( "e" | "E" ) >
 	|
 	< WHILE: ( "w" | "W" ) ( "h" | "H" ) ( "i" | "I" ) ( "l" | "L" ) ( "e" | "E" ) >
-	|
-	< UNTIL: ( "u" | "U" ) ( "n" | "N" ) ( "t" | "T" ) ( "i" | "I" ) ( "l" | "L" ) >
 	|
 	< INTO: ( "i" | "I" ) ( "n" | "N" ) ( "t" | "T" ) ( "o" | "O" ) >
 	|
@@ -185,6 +213,14 @@ TOKEN:
 	< UNWIND: ( "u" | "U" ) ( "n" | "N" ) ( "w" | "W" ) ( "i" | "I" ) ( "n" | "N" ) ( "d" | "D" ) >
 	|
 	< MAXDEPTH: ( "m" | "M" ) ( "a" | "A" ) ( "x" | "X" ) ( "d" | "D" ) ( "e" | "E" ) ( "p" | "P" ) ( "t" | "T" ) ( "h" | "H" ) >
+	|
+	< MINDEPTH: ( "m" | "M" ) ( "i" | "I" ) ( "n" | "N" ) ( "d" | "D" ) ( "e" | "E" ) ( "p" | "P" ) ( "t" | "T" ) ( "h" | "H" ) >
+	|
+	< CLASS: ( "c" | "C" ) ( "l" | "L" ) ( "a" | "A" ) ( "s" | "S" ) ( "s" | "S" ) >
+	|
+	< CLASSES: ( "c" | "C" ) ( "l" | "L" ) ( "a" | "A" ) ( "s" | "S" ) ( "s" | "S" ) ( "e" | "E" ) ( "s" | "S" ) >
+    |
+	< EXCEPTION: ( "e" | "E" ) ( "x" | "X" ) ( "c" | "C" ) ( "e" | "E" ) ( "p" | "P" ) ( "t" | "T" ) ( "i" | "I" ) ( "o" | "O" ) ( "n" | "N" ) >
 	|
 	< THIS: "@" ( ( "t" | "T" ) ( "h" | "H" ) ( "i" | "I" ) ( "s" | "S" ) ) >
 	|
@@ -381,9 +417,9 @@ TOKEN :
 
 TOKEN :
 {
-  < IDENTIFIER: ( (<DOLLAR>)? <LETTER> (<PART_LETTER>)* ) >
-//|
-//  < QUOTED_IDENTIFIER: ( "`" (~["`"]) (~["`"])*  "`") >
+  < IDENTIFIER: ( ((<DOLLAR>) | <LETTER>) (<PART_LETTER>)* ) >
+|
+  < QUOTED_IDENTIFIER: ( "`" (~["`"]) (~["`"])*  "`") >
 |
   < INDEX_IDENTIFIER: ( "I" | "i") ( "N" | "n") ( "D" | "d") ( "E" | "e") ( "X" | "x") ":" ( "__@recordmap@___" )? <IDENTIFIER> ( ( <DOT> | <MINUS> ) <IDENTIFIER> )*  >
 |
@@ -436,7 +472,7 @@ OStatement parse() :
 
 OIdentifier Identifier():
 {
-    //Token quotedToken = null;
+    Token quotedToken = null;
     Token token = null;
 
 }
@@ -474,10 +510,20 @@ OIdentifier Identifier():
     |
     token = <LUCENE>
     |
+    token = <CLASS>
+    |
+    token = <CLASSES>
+    |
+    token = <MINDEPTH>
+    |
     token = <NEAR>
     |
     token = <WITHIN>
     |
+    token = <EXCEPTION>
+    |
+    quotedToken = <QUOTED_IDENTIFIER>
+    /*
     (
     //TODO REPLACE THIS WITH <QUOTED_IDENTIFIER>
         <BACKTICK>
@@ -602,8 +648,6 @@ OIdentifier Identifier():
             |
             token = <LIKE>
             |
-            token = <UNTIL>
-            |
             token = <IS>
             |
             token = <BETWEEN>
@@ -625,24 +669,27 @@ OIdentifier Identifier():
             token = <INSTANCEOF>
             |
             token = <CLUSTER>
+            |
+            token = <EXCEPTION>
         )
         <BACKTICK>
     )
+    */
 ) {
 
-    //if(token!=null){
-    jjtThis.value = token.image;
-    /*
+    if(token!=null){
+        jjtThis.value = token.image;
     }else{
+        jjtThis.quoted = true;
         jjtThis.value = quotedToken.image;
         jjtThis.value = jjtThis.value.substring(1, jjtThis.value.length() - 1);
-        try{
+        /*try{
             jjtThis.value = java.net.URLEncoder.encode(jjtThis.value, null);
         }catch(Exception e){
 
-        }
+        }*/
     }
-    */
+
     return jjtThis;
 
 
@@ -723,6 +770,8 @@ OStatement Statement():
         result = CreateEdgeStatement()
         |
 		result = UpdateStatement()
+		|
+		result = MatchStatement()
 
 	) [ <SEMICOLON> ]
 	{
@@ -769,7 +818,7 @@ OSelectStatement SelectStatement():
 {validationStats.add(0, new ValidationStats());}
 {
     (
-        <SELECT>
+   	    <SELECT>
         [ jjtThis.projection = Projection() ]
         <FROM>
         jjtThis.target = FromClause()
@@ -809,15 +858,7 @@ OTraverseStatement TraverseStatement():
     	<FROM>
     	jjtThis.target = FromClause()
     	[ <MAXDEPTH> jjtThis.maxDepth = Integer() ]
-    	[
-          (
-            LOOKAHEAD( WhileClause() )
-              jjtThis.whereClause = WhileClause()
-          |
-            LOOKAHEAD( UntilClause() )
-              jjtThis.whereClause = UntilClause()
-          )
-        ]
+    	[ <WHILE> jjtThis.whereClause = WhereClause() ]
         [ jjtThis.limit = Limit() ]
         [ <STRATEGY>
             (
@@ -830,6 +871,39 @@ OTraverseStatement TraverseStatement():
     {return jjtThis;}
 }
 
+OMatchStatement MatchStatement():
+{
+    OMatchExpression lastMatchExpr = null;
+    OExpression lastReturn = null;
+    OIdentifier lastReturnAlias = null;
+}
+{
+    (
+        <MATCH>
+        lastMatchExpr = MatchExpression() { jjtThis.matchExpressions.add(lastMatchExpr); }
+        (
+            <COMMA>
+            lastMatchExpr = MatchExpression() { jjtThis.matchExpressions.add(lastMatchExpr); }
+        )*
+        <RETURN>
+        lastReturn = Expression() {lastReturnAlias = null;}
+        [ <AS> lastReturnAlias = Identifier() ]
+        {
+            jjtThis.returnAliases.add(lastReturnAlias);
+            jjtThis.returnItems.add(lastReturn);
+        }
+        (
+            <COMMA>
+            lastReturn = Expression() {lastReturnAlias = null;}
+            [ <AS> lastReturnAlias = Identifier() ]
+            {
+                jjtThis.returnAliases.add(lastReturnAlias);
+                jjtThis.returnItems.add(lastReturn);
+            }
+        )*
+        [ jjtThis.limit = Limit() ]
+    ){ return jjtThis; }
+}
 
 ODeleteStatement DeleteStatement():
 {}
@@ -851,6 +925,7 @@ ODeleteVertexStatement DeleteVertexStatement():
 (
 	<DELETE>
 	<VERTEX>
+	[ <FROM> {jjtThis.from = true;} ]
 	jjtThis.fromClause = FromClause()
 	[ <RETURN> <BEFORE> { jjtThis.returnBefore = true; } ]
 	[ <WHERE> jjtThis.whereClause = WhereClause() ]
@@ -1254,7 +1329,10 @@ OUpdateIncrementItem UpdateIncrementItem():
 {}
 {
     (
-	    jjtThis.left = Identifier() <EQ> jjtThis.right = Expression()
+	    jjtThis.left = Identifier() 
+	    [ jjtThis.leftModifier = Modifier() ]
+	    <EQ> 
+	    jjtThis.right = Expression()
 	)
 	{ return jjtThis; }
 }
@@ -1302,8 +1380,19 @@ OInsertStatement InsertStatement():
 	    |
 	    jjtThis.targetIndex = IndexIdentifier()
 	)
-	[ <RETURN> jjtThis.returnStatement = Projection() ]
-    jjtThis.insertBody = InsertBody()
+    [ LOOKAHEAD(InsertBody()) jjtThis.insertBody = InsertBody() ]
+    [ <RETURN> jjtThis.returnStatement = Projection() ]
+    [
+        [ <FROM> { jjtThis.selectWithFrom = true; } ]
+        (
+             jjtThis.selectStatement = SelectStatement()
+             |
+             LOOKAHEAD(2)
+            (
+                <LPAREN> jjtThis.selectStatement = SelectStatement() { jjtThis.selectInParentheses = true; } <RPAREN>
+            )
+        )
+    ]
     [ <UNSAFE> { jjtThis.unsafe = true; }]
 ) {return jjtThis;}
 }
@@ -1380,21 +1469,9 @@ OInsertBody InsertBody():
                 )*
             )
             |
-            (
-                [ <FROM> ]
-                (
-                     jjtThis.selectStatement = SelectStatement()
-                     |
-                     LOOKAHEAD(2)
-                    (
-                        <LPAREN> jjtThis.selectStatement = SelectStatement() { jjtThis.selectInParentheses = true; } <RPAREN>
-                    )
-                )
-            )
-            |
             ( <CONTENT> jjtThis.content = Json() )
          )
-        [ <RETURN> jjtThis.returnProjection = Projection() ]
+         //[ <RETURN> jjtThis.returnProjection = Projection() ]
     )
     { return jjtThis; }
 }
@@ -1536,6 +1613,7 @@ OCreateEdgeStatement CreateEdgeStatement():
     [ jjtThis.body = InsertBody() ]
     [ jjtThis.retry = Retry() ]
     [ jjtThis.wait = Wait() ]
+    [ jjtThis.batch = Batch() ]
 ) {return jjtThis;}
 }
 
@@ -1905,7 +1983,15 @@ OMathExpression ParenthesisExpression():
 {}
 {
     (
-	    <LPAREN> ( jjtThis.expression = Expression() | jjtThis.statement = SelectStatement() ) <RPAREN>
+	    <LPAREN>
+	    (
+	        jjtThis.expression = Expression()
+	        |
+	        jjtThis.statement = SelectStatement()
+	        |
+            jjtThis.statement = InsertStatement()
+        )
+	    <RPAREN>
 	)
 	{return jjtThis;}
 }
@@ -2028,6 +2114,8 @@ OFromItem FromItem():
     	            LOOKAHEAD(SelectWithoutTargetStatement()) jjtThis.statement = SelectWithoutTargetStatement()
     	            |
     	            jjtThis.statement = TraverseStatement()
+    	            |
+                    jjtThis.statement = MatchStatement()
     	) <RPAREN>
     	|
     	jjtThis.inputParam = InputParameter()
@@ -2098,22 +2186,6 @@ OIndexIdentifier IndexIdentifier():
 OWhereClause WhereClause():
 {}
 {
-	jjtThis.baseExpression = OrBlock()
-	{return jjtThis;}
-}
-
-OWhereClause WhileClause():
-{}
-{
-         <WHILE>
-	jjtThis.baseExpression = OrBlock()
-	{return jjtThis;}
-}
-
-OWhereClause UntilClause():
-{}
-{
-        <UNTIL>
 	jjtThis.baseExpression = OrBlock()
 	{return jjtThis;}
 }
@@ -2242,6 +2314,8 @@ OBinaryCompareOperator CompareOperator():
       | result = LuceneOperator()
       | result = NearOperator()
       | result = WithinOperator()
+      | result = ScAndOperator()
+
 ){return result;}
 }
 
@@ -2333,6 +2407,14 @@ OWithinOperator WithinOperator():
 ){return jjtThis;}
 }
 
+OScAndOperator ScAndOperator():
+{}
+{
+(
+	<SC_AND>
+){return jjtThis;}
+}
+
 OContainsKeyOperator ContainsKeyOperator():
 {}
 {
@@ -2391,7 +2473,13 @@ OBooleanExpression InstanceofCondition():
 }
 {
     (
-        jjtThis.left = Expression() <INSTANCEOF> ( jjtThis.right = Identifier() | token = <STRING_LITERAL> { jjtThis.rightString = token.image; } )
+        jjtThis.left = Expression() <INSTANCEOF> (
+		   jjtThis.right = Identifier()
+		   |
+		   token = <STRING_LITERAL> { jjtThis.rightString = token.image; }
+		   |
+		   token = <CHARACTER_LITERAL> { jjtThis.rightString = token.image; }
+		)
     )
     {return jjtThis;}
 }
@@ -2577,6 +2665,8 @@ OBooleanExpression MatchesCondition():
     	    ( token = <STRING_LITERAL> {jjtThis.right = token.image;} )
     	    |
     	    ( token = <CHARACTER_LITERAL> {jjtThis.right = token.image;} )
+    	    |
+            ( jjtThis.rightParam = InputParameter() )
     	)
     )
 
@@ -2764,13 +2854,20 @@ OBatch Batch():
     { return jjtThis; }
 }
 
-java.lang.Number Timeout():
+OTimeout Timeout():
 { OInteger val; }
 {
+    <TIMEOUT>
+
     (
-	    <TIMEOUT> val = Integer()
+	    val = Integer() { jjtThis.val = val.getValue(); }
+	    [
+	        ( <RETURN> { jjtThis.failureStrategy = OTimeout.RETURN;} )
+	        |
+	        ( <EXCEPTION> { jjtThis.failureStrategy = OTimeout.EXCEPTION;} )
+	    ]
 	)
-	{ return val.getValue(); }
+	{ return jjtThis; }
 }
 
 
@@ -2890,6 +2987,8 @@ OJson Json():
             (
                 lastItem.leftIdentifier = Identifier()
                 |
+                token = <RECORD_ATTRIBUTE> {lastItem.leftString = token.image; }
+                |
                 token = <STRING_LITERAL> { lastItem.leftString = token.image.substring(1, token.image.length() - 1); }
                 |
                 token = <CHARACTER_LITERAL> { lastItem.leftString = token.image.substring(1, token.image.length() - 1); }
@@ -2901,6 +3000,8 @@ OJson Json():
                 { lastItem = new OJsonItem(); }
                 (
                     lastItem.leftIdentifier = Identifier()
+                    |
+                    token = <RECORD_ATTRIBUTE> {lastItem.leftString = token.image; }
                     |
                     token = <STRING_LITERAL> { lastItem.leftString = token.image.substring(1, token.image.length() - 1); }
                     |
@@ -2917,4 +3018,339 @@ OJson Json():
 
 
 
+OMatchExpression MatchExpression():
+{ OMatchPathItem nextItem = null; }
+{
+    (
+        jjtThis.origin = MatchFilter()
+        (
+            (
+                LOOKAHEAD(3)
+                nextItem = MatchPathItem()
+                |
+                LOOKAHEAD(3)
+                nextItem = MultiMatchPathItemArrows()
+                |
+                LOOKAHEAD(3)
+                nextItem = MultiMatchPathItem()
+                |
+                LOOKAHEAD(OutPathItem())
+                nextItem = OutPathItem()
+                |
+                nextItem = InPathItem()
+                |
+                LOOKAHEAD(BothPathItem())
+                nextItem = BothPathItem()
+            )
+            { jjtThis.items.add(nextItem); }
+        )*
+    ) { return jjtThis; }
+}
 
+
+OMatchPathItem MatchPathItem():
+{}
+{
+    (
+        jjtThis.method = MethodCall()
+        [ jjtThis.filter = MatchFilter() ]
+    ){ return jjtThis; }
+}
+
+OMatchPathItem MatchPathItemFirst():
+{}
+{
+    (
+        jjtThis.function = FunctionCall()
+        [ jjtThis.filter = MatchFilter() ]
+    ){ return jjtThis; }
+}
+
+OMatchPathItem MultiMatchPathItem():
+{ OMatchPathItem nextItem = null; }
+{
+    (
+        <DOT>
+        <LPAREN>
+        (
+            nextItem = MatchPathItemFirst() { jjtThis.items.add(nextItem); }
+        )
+        (
+            LOOKAHEAD(MatchPathItem())
+            nextItem = MatchPathItem() { jjtThis.items.add(nextItem); }
+        )*
+        <RPAREN>
+        [ jjtThis.filter = MatchFilter() ]
+    ){ return jjtThis; }
+}
+
+OMatchPathItem MultiMatchPathItemArrows():
+{
+    OMatchPathItem prevItem = null;
+    OMatchPathItem nextItem = null;
+}
+{
+    (
+        <DOT>
+        <LPAREN>
+        (
+            (
+                LOOKAHEAD( OutPathItemOpt() )
+                nextItem = OutPathItemOpt()  { jjtThis.items.add(nextItem); }
+                |
+                LOOKAHEAD( InPathItemOpt() )
+                nextItem = InPathItemOpt()  { jjtThis.items.add(nextItem); }
+                |
+                LOOKAHEAD( BothPathItemOpt() )
+                nextItem = BothPathItemOpt()  { jjtThis.items.add(nextItem); }
+            ){
+                if(prevItem !=null && prevItem.filter == null){
+                    throw new OQueryParsingException("MATCH sub-pattern with no square brackets");
+                }
+                prevItem = nextItem;
+            }
+        )+
+        <RPAREN>
+        [ jjtThis.filter = MatchFilter() ]
+    ){ return jjtThis; }
+}
+
+OMatchFilter MatchFilter():
+{ OMatchFilterItem lastItem = null; }
+{
+    (
+        <LBRACE>
+            [
+                lastItem = MatchFilterItem() { jjtThis.items.add(lastItem); }
+                (
+                    <COMMA>
+                    lastItem = MatchFilterItem() { jjtThis.items.add(lastItem); }
+                )*
+            ]
+        <RBRACE>
+    ) { return jjtThis; }
+}
+
+OMatchFilterItem MatchFilterItem():
+{}
+{
+    (
+        (
+            <CLASS> <COLON> jjtThis.className = Expression()
+        )
+        |
+        (
+            <CLASSES> <COLON> jjtThis.classNames = Expression()
+        )
+        |
+        (
+            <AS> <COLON> jjtThis.alias = Identifier()
+        )
+        |
+        (
+            <WHERE> <COLON> <LPAREN>
+            (
+                jjtThis.filter = WhereClause()
+            )
+            <RPAREN>
+        )
+        |
+        (
+            <WHILE> <COLON> <LPAREN>
+            (
+                jjtThis.whileCondition = WhereClause()
+            )
+            <RPAREN>
+        )
+        |
+        (
+            <MAXDEPTH> <COLON> jjtThis.maxDepth = Integer()
+        )
+    )
+    { return jjtThis; }
+}
+
+OMatchPathItem OutPathItem():
+{ OIdentifier edgeName = null; }
+{
+
+        (
+            (
+                <MINUS>
+                [edgeName = Identifier()]
+                <MINUS>
+            )
+            |
+            <DECR>
+        )
+        <GT>
+        jjtThis.filter = MatchFilter()
+
+    {
+     if(edgeName==null){
+        edgeName = new OIdentifier(-1);
+        edgeName.value = "E";
+     }
+     jjtThis.method = new OMethodCall(-1);
+     jjtThis.method.methodName = new OIdentifier(-1);
+     jjtThis.method.methodName.value = "out";
+     OExpression exp = new OExpression(-1);
+     exp.value = edgeName.value;
+     jjtThis.method.params.add(exp);
+     return jjtThis;
+    }
+}
+
+OMatchPathItem InPathItem():
+{ OIdentifier edgeName = null; }
+{
+
+        <LT>
+        (
+            (
+                <MINUS>
+                [edgeName = Identifier()]
+                <MINUS>
+            )
+            |
+            <DECR>
+        )
+        jjtThis.filter = MatchFilter()
+
+    {
+     if(edgeName==null){
+        edgeName = new OIdentifier(-1);
+        edgeName.value = "E";
+     }
+     jjtThis.method = new OMethodCall(-1);
+     jjtThis.method.methodName = new OIdentifier(-1);
+     jjtThis.method.methodName.value = "in";
+     OExpression exp = new OExpression(-1);
+     exp.value = edgeName.value;
+     jjtThis.method.params.add(exp);
+     return jjtThis;
+    }
+}
+
+OMatchPathItem BothPathItem():
+{ OIdentifier edgeName = null; }
+{
+
+        (
+            (
+                <MINUS>
+                [edgeName = Identifier()]
+                <MINUS>
+            )
+            |
+            <DECR>
+        )
+        jjtThis.filter = MatchFilter()
+
+    {
+     if(edgeName==null){
+        edgeName = new OIdentifier(-1);
+        edgeName.value = "E";
+     }
+     jjtThis.method = new OMethodCall(-1);
+     jjtThis.method.methodName = new OIdentifier(-1);
+     jjtThis.method.methodName.value = "both";
+     OExpression exp = new OExpression(-1);
+     exp.value = edgeName.value;
+     jjtThis.method.params.add(exp);
+     return jjtThis;
+    }
+}
+
+
+OMatchPathItem OutPathItemOpt():
+{ OIdentifier edgeName = null; }
+{
+
+        (
+            (
+                <MINUS>
+                [edgeName = Identifier()]
+                <MINUS>
+            )
+            |
+            <DECR>
+        )
+        <GT>
+        [jjtThis.filter = MatchFilter()]
+
+    {
+     if(edgeName==null){
+        edgeName = new OIdentifier(-1);
+        edgeName.value = "E";
+     }
+     jjtThis.method = new OMethodCall(-1);
+     jjtThis.method.methodName = new OIdentifier(-1);
+     jjtThis.method.methodName.value = "out";
+     OExpression exp = new OExpression(-1);
+     exp.value = edgeName.value;
+     jjtThis.method.params.add(exp);
+     return jjtThis;
+    }
+}
+
+OMatchPathItem InPathItemOpt():
+{ OIdentifier edgeName = null; }
+{
+
+        <LT>
+        (
+            (
+                <MINUS>
+                [edgeName = Identifier()]
+                <MINUS>
+            )
+            |
+            <DECR>
+        )
+        [jjtThis.filter = MatchFilter()]
+
+    {
+     if(edgeName==null){
+        edgeName = new OIdentifier(-1);
+        edgeName.value = "E";
+     }
+     jjtThis.method = new OMethodCall(-1);
+     jjtThis.method.methodName = new OIdentifier(-1);
+     jjtThis.method.methodName.value = "in";
+     OExpression exp = new OExpression(-1);
+     exp.value = edgeName.value;
+     jjtThis.method.params.add(exp);
+     return jjtThis;
+    }
+}
+
+OMatchPathItem BothPathItemOpt():
+{ OIdentifier edgeName = null; }
+{
+
+        (
+            (
+                <MINUS>
+                [edgeName = Identifier()]
+                <MINUS>
+            )
+            |
+            <DECR>
+        )
+        [jjtThis.filter = MatchFilter()]
+
+    {
+     if(edgeName==null){
+        edgeName = new OIdentifier(-1);
+        edgeName.value = "E";
+     }
+     jjtThis.method = new OMethodCall(-1);
+     jjtThis.method.methodName = new OIdentifier(-1);
+     jjtThis.method.methodName.value = "both";
+     OExpression exp = new OExpression(-1);
+     exp.value = edgeName.value;
+     jjtThis.method.params.add(exp);
+     return jjtThis;
+    }
+}

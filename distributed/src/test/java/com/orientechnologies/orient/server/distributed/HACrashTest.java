@@ -15,11 +15,11 @@
  */
 package com.orientechnologies.orient.server.distributed;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Distributed TX test against "remote" protocol. It starts 3 servers and during a stress test, kill last server. The test checks
@@ -34,7 +34,7 @@ public class HACrashTest extends AbstractServerClusterTxTest {
 
   @Test
   public void test() throws Exception {
-    count = 1000;
+    count = 1500;
     maxRetries = 10;
     init(SERVERS);
     prepare(false);
@@ -60,7 +60,7 @@ public class HACrashTest extends AbstractServerClusterTxTest {
             public void run() {
               Assert.assertTrue("Insert was too fast", inserting);
 
-              log("RESTART SERVER " + (SERVERS - 1));
+              banner("RESTART SERVER " + (SERVERS - 1));
               try {
                 serverInstance.get(SERVERS - 1).startServer(getDistributedServerConfiguration(serverInstance.get(SERVERS - 1)));
                 lastServerOn = true;
@@ -70,7 +70,7 @@ public class HACrashTest extends AbstractServerClusterTxTest {
             }
           }, 10000);
 
-          log("SIMULATE FAILURE ON SERVER " + (SERVERS - 1));
+          banner("SIMULATE FAILURE ON SERVER " + (SERVERS - 1));
           serverInstance.get(SERVERS - 1).crashServer();
           lastServerOn = false;
         }

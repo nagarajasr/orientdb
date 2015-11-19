@@ -16,16 +16,16 @@
 
 package com.orientechnologies.orient.core.metadata.schema;
 
-import com.orientechnologies.common.listener.OProgressListener;
-import com.orientechnologies.orient.core.index.OIndex;
-import com.orientechnologies.orient.core.metadata.schema.clusterselection.OClusterSelectionStrategy;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.orientechnologies.common.listener.OProgressListener;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.metadata.schema.clusterselection.OClusterSelectionStrategy;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 
 /**
  * Abstract Delegate for OClass interface.
@@ -453,6 +453,11 @@ public abstract class OClassAbstractDelegate implements OClass {
   }
 
   @Override
+  public boolean hasPolymorphicClusterId(final int clusterId) {
+    return delegate.hasPolymorphicClusterId(clusterId);
+  }
+
+  @Override
   public int compareTo(final OClass o) {
     return delegate.compareTo(o);
   }
@@ -460,5 +465,20 @@ public abstract class OClassAbstractDelegate implements OClass {
   @Override
   public float getClassOverSize() {
     return delegate.getClassOverSize();
+  }
+
+  @Override
+  public String toString() {
+    return delegate.toString();
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    return delegate.equals(obj);
+  }
+
+  @Override
+  public int hashCode() {
+    return delegate.hashCode();
   }
 }

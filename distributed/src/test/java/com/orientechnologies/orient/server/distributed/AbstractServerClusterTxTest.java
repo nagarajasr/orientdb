@@ -16,15 +16,18 @@
 
 package com.orientechnologies.orient.server.distributed;
 
+import java.util.Date;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+
+import junit.framework.Assert;
+
+import com.orientechnologies.orient.core.command.script.OCommandScript;
 import com.orientechnologies.orient.core.db.OPartitionedDatabasePoolFactory;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import junit.framework.Assert;
-
-import java.util.Date;
-import java.util.UUID;
-import java.util.concurrent.Callable;
+import com.orientechnologies.orient.core.storage.ORecordDuplicatedException;
 
 /**
  * Test distributed TX
@@ -60,15 +63,28 @@ public abstract class AbstractServerClusterTxTest extends AbstractServerClusterI
             checkRecordIsDeleted(database, person);
             // checkIndex(database, (String) person.field("name"), person.getIdentity());
 
+            // ASSURE THE UPDATE IS EXECUTED CORRECTLY IN TX
+            String sql = "UPDATE Person SET PostalCode = \"78001\" WHERE id = \"" + person.field("id") + "\"";
+            OCommandScript cmdScript = new OCommandScript("sql", sql);
+            database.command(cmdScript).execute();
+
             database.commit();
 
             Assert.assertTrue(person.getIdentity().isPersistent());
+          } catch (ORecordDuplicatedException e) {
+            // IGNORE IT
+          } catch (ODistributedException e) {
+            if (!(e.getCause() instanceof ORecordDuplicatedException)) {
+              database.rollback();
+              throw e;
+            }
           } catch (Exception e) {
             database.rollback();
             throw e;
           }
 
-          Thread.sleep(delayWriter);
+          if (delayWriter > 0)
+            Thread.sleep(delayWriter);
 
         } catch (InterruptedException e) {
           System.out.println("Writer received interrupt (db=" + database.getURL());
