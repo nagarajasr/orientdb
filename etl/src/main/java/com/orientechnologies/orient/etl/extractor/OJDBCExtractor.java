@@ -26,7 +26,12 @@ import com.orientechnologies.orient.etl.OETLProcessor;
 import com.orientechnologies.orient.etl.OExtractedItem;
 
 import java.io.Reader;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -109,6 +114,7 @@ public class OJDBCExtractor extends OAbstractExtractor {
         OType type = OType.ANY;
         final int sqlType = rs.getMetaData().getColumnType(i);
         switch (sqlType) {
+        case Types.BIT:
         case Types.BOOLEAN:
           type = OType.BOOLEAN;
           break;

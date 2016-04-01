@@ -24,7 +24,6 @@ import com.orientechnologies.lucene.query.QueryContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.OContextualRecordId;
-import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.index.*;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.apache.lucene.analysis.Analyzer;
@@ -92,11 +91,6 @@ public class OLuceneFullTextIndexManager extends OLuceneIndexManagerAbstract {
   }
 
   @Override
-  public ORID getIdentity() {
-    return null;
-  }
-
-  @Override
   public Object get(Object key) {
     Query q = null;
     try {
@@ -147,16 +141,17 @@ public class OLuceneFullTextIndexManager extends OLuceneIndexManagerAbstract {
         Object val = null;
         if (key instanceof OCompositeKey) {
           List<Object> keys = ((OCompositeKey) key).getKeys();
-
           int k = 0;
           for (Object o : keys) {
-            doc.add(OLuceneIndexType.createField("k" + k, val, Field.Store.NO, Field.Index.ANALYZED));
+            doc.add(OLuceneIndexType.createField("k" + k, o, Field.Store.NO, Field.Index.ANALYZED));
+            k++;
           }
         } else if (key instanceof Collection) {
           Collection<Object> keys = (Collection<Object>) key;
           int k = 0;
           for (Object o : keys) {
             doc.add(OLuceneIndexType.createField("k" + k, o, Field.Store.NO, Field.Index.ANALYZED));
+            k++;
           }
         } else {
           val = key;
@@ -197,7 +192,8 @@ public class OLuceneFullTextIndexManager extends OLuceneIndexManagerAbstract {
   }
 
   @Override
-  public void onRecordAddedToResultSet(QueryContext queryContext, OContextualRecordId recordId, Document ret, final ScoreDoc score) {
+  public void onRecordAddedToResultSet(QueryContext queryContext, OContextualRecordId recordId, Document ret,
+      final ScoreDoc score) {
     recordId.setContext(new HashMap<String, Object>() {
       {
         put("score", score.score);
@@ -222,7 +218,8 @@ public class OLuceneFullTextIndexManager extends OLuceneIndexManagerAbstract {
   }
 
   @Override
-  public OIndexCursor iterateEntriesMajor(Object fromKey, boolean isInclusive, boolean ascSortOrder, ValuesTransformer transformer) {
+  public OIndexCursor iterateEntriesMajor(Object fromKey, boolean isInclusive, boolean ascSortOrder,
+      ValuesTransformer transformer) {
     return null;
   }
 
@@ -284,7 +281,8 @@ public class OLuceneFullTextIndexManager extends OLuceneIndexManagerAbstract {
     for (String f : definition.getFields()) {
       Object val = formattedKey.get(i);
       i++;
-      doc.add(OLuceneIndexType.createField(f, val, Field.Store.NO, Field.Index.ANALYZED));
+      if (val != null)
+        doc.add(OLuceneIndexType.createField(f, val, Field.Store.NO, Field.Index.ANALYZED));
     }
     return doc;
   }

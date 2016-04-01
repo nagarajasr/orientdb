@@ -19,6 +19,7 @@
  */
 package com.orientechnologies.orient.core.sql;
 
+import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OPatternConst;
 import com.orientechnologies.orient.core.collate.OCollate;
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
@@ -26,14 +27,7 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
-import com.orientechnologies.orient.core.index.OIndex;
-import com.orientechnologies.orient.core.index.OIndexDefinition;
-import com.orientechnologies.orient.core.index.OIndexDefinitionFactory;
-import com.orientechnologies.orient.core.index.OIndexFactory;
-import com.orientechnologies.orient.core.index.OIndexes;
-import com.orientechnologies.orient.core.index.OPropertyMapIndexDefinition;
-import com.orientechnologies.orient.core.index.ORuntimeKeyIndexDefinition;
-import com.orientechnologies.orient.core.index.OSimpleKeyIndexDefinition;
+import com.orientechnologies.orient.core.index.*;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
 import com.orientechnologies.orient.core.metadata.schema.OType;
@@ -258,15 +252,26 @@ public class OCommandExecutorSQLCreateIndex extends OCommandExecutorSQLAbstract 
             .getIndexManager()
             .createIndex(indexName, indexType.toString(),
                 new ORuntimeKeyIndexDefinition(serializerKeyId, factory.getLastVersion()), null, null, metadataDoc, engine);
-      } else
+      } else {
+        OLogManager.instance().warn(this,
+            "Key type is not provided for '%s' index. Untyped indexes are deprecated and considered unstable." +
+                " Please specify a key type.", indexName);
         idx = database.getMetadata().getIndexManager()
             .createIndex(indexName, indexType.toString(), null, null, null, metadataDoc, engine);
+      }
     } else {
       if ((keyTypes == null || keyTypes.length == 0) && collates == null) {
         idx = oClass.createIndex(indexName, indexType.toString(), null, metadataDoc, engine, fields);
       } else {
-        final List<OType> fieldTypeList = keyTypes != null ? Arrays.asList(keyTypes) : ((OClassImpl) oClass)
-            .extractFieldTypes(fields);
+        final List<OType> fieldTypeList;
+        if (keyTypes == null) {
+          for (final String fieldName : fields) {
+            if (!fieldName.equals("@rid") && !oClass.existsProperty(fieldName))
+              throw new OIndexException("Index with name : '" + indexName + "' cannot be created on class : '" + oClass.getName() + "' because field: '" + fieldName + "' is absent in class definition.");
+          }
+          fieldTypeList = ((OClassImpl) oClass).extractFieldTypes(fields);
+        } else
+          fieldTypeList = Arrays.asList(keyTypes);
 
         final OIndexDefinition idxDef = OIndexDefinitionFactory.createIndexDefinition(oClass, Arrays.asList(fields), fieldTypeList,
             collatesList, indexType.toString(), null);

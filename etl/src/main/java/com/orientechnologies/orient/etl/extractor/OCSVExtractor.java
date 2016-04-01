@@ -15,9 +15,16 @@ import java.io.Reader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static com.orientechnologies.orient.etl.OETLProcessor.LOG_LEVELS.DEBUG;
 
 /**
+ * An extractor based on Apache Commons CSV
  * Created by frank on 10/5/15.
  */
 public class OCSVExtractor extends OAbstractSourceExtractor {
@@ -86,8 +93,8 @@ public class OCSVExtractor extends OAbstractSourceExtractor {
     }
 
     if (iConfiguration.containsField("columnsOnFirstLine")) {
-      boolean columnsOnFirstLine = (Boolean) iConfiguration.field("columnsOnFirstLine");
-      if (columnsOnFirstLine == true) {
+      Boolean columnsOnFirstLine = (Boolean) iConfiguration.field("columnsOnFirstLine");
+      if (columnsOnFirstLine.equals(Boolean.TRUE)) {
         csvFormat = csvFormat.withHeader();
       }
     } else {
@@ -109,6 +116,7 @@ public class OCSVExtractor extends OAbstractSourceExtractor {
         }
       }
 
+      log(OETLProcessor.LOG_LEVELS.INFO, "column types: %s", columnTypes);
       csvFormat = csvFormat.withHeader(columnNames.toArray(new String[] {}));
 
     }
@@ -122,7 +130,7 @@ public class OCSVExtractor extends OAbstractSourceExtractor {
 
     if (iConfiguration.containsField("nullValue")) {
       nullValue = iConfiguration.<String> field("nullValue");
-      csvFormat.withNullString(nullValue);
+      csvFormat = csvFormat.withNullString(nullValue);
     }
 
     if (iConfiguration.containsField("quote")) {
@@ -140,6 +148,7 @@ public class OCSVExtractor extends OAbstractSourceExtractor {
     try {
 
       CSVParser parser = new CSVParser(iReader, csvFormat);
+
       recordIterator = parser.iterator();
     } catch (IOException e) {
       throw new OExtractorException(e);
@@ -198,7 +207,7 @@ public class OCSVExtractor extends OAbstractSourceExtractor {
       }
     }
 
-    log(OETLProcessor.LOG_LEVELS.DEBUG, "document=%s", doc);
+    log(DEBUG, "document=%s", doc);
     current++;
     return new OExtractedItem(current, doc);
   }

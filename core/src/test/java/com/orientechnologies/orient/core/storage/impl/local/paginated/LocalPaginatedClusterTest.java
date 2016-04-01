@@ -20,6 +20,7 @@ import com.orientechnologies.orient.core.storage.ORawBuffer;
 import com.orientechnologies.orient.core.storage.cache.OWriteCache;
 import com.orientechnologies.orient.core.storage.impl.local.OStorageVariableParser;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperationsManager;
+import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OWALPage;
 import com.orientechnologies.orient.core.version.ORecordVersion;
 import com.orientechnologies.orient.core.version.OVersionFactory;
 import org.testng.Assert;
@@ -86,7 +87,8 @@ public class LocalPaginatedClusterTest {
     writeCache = new OWOWCache(false, OGlobalConfiguration.DISK_CACHE_PAGE_SIZE.getValueAsInteger() * 1024, 1000000, null, 100,
         2648L * 1024 * 1024, 2648L * 1024 * 1024 + 400L * 1024 * 1024 * 1024, storage, true, 1);
 
-    readCache = new O2QCache(400L * 1024 * 1024 * 1024, OGlobalConfiguration.DISK_CACHE_PAGE_SIZE.getValueAsInteger() * 1024, false);
+    readCache = new O2QCache(400L * 1024 * 1024 * 1024, OGlobalConfiguration.DISK_CACHE_PAGE_SIZE.getValueAsInteger() * 1024, false,
+        20);
 
     atomicOperationsManager = new OAtomicOperationsManager(storage);
 
@@ -158,7 +160,7 @@ public class LocalPaginatedClusterTest {
   }
 
   public void testAddOneBigRecord() throws IOException {
-    byte[] bigRecord = new byte[2 * 65536 + 100];
+    byte[] bigRecord = new byte[2 * OWALPage.PAGE_SIZE + 100];
     MersenneTwisterFast mersenneTwisterFast = new MersenneTwisterFast();
     mersenneTwisterFast.nextBytes(bigRecord);
 
@@ -799,7 +801,7 @@ public class LocalPaginatedClusterTest {
   }
 
   public void testUpdateOneBigRecord() throws IOException {
-    byte[] bigRecord = new byte[2 * 65536 + 100];
+    byte[] bigRecord = new byte[2 * OWALPage.PAGE_SIZE + 100];
     MersenneTwisterFast mersenneTwisterFast = new MersenneTwisterFast();
     mersenneTwisterFast.nextBytes(bigRecord);
 
@@ -811,7 +813,7 @@ public class LocalPaginatedClusterTest {
     Assert.assertEquals(physicalPosition.clusterPosition, 0);
 
     recordVersion.increment();
-    bigRecord = new byte[2 * 65536 + 20];
+    bigRecord = new byte[2 * OWALPage.PAGE_SIZE + 20];
     mersenneTwisterFast.nextBytes(bigRecord);
 
     paginatedCluster.updateRecord(physicalPosition.clusterPosition, bigRecord, recordVersion, (byte) 2);

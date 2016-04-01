@@ -19,6 +19,12 @@
  */
 package com.orientechnologies.common.console;
 
+import com.orientechnologies.common.console.annotation.ConsoleCommand;
+import com.orientechnologies.common.console.annotation.ConsoleParameter;
+import com.orientechnologies.common.log.OLogManager;
+import com.orientechnologies.common.parser.OStringParser;
+import com.orientechnologies.common.util.OArrays;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -41,12 +47,6 @@ import java.util.ServiceLoader;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.orientechnologies.common.console.annotation.ConsoleCommand;
-import com.orientechnologies.common.console.annotation.ConsoleParameter;
-import com.orientechnologies.common.log.OLogManager;
-import com.orientechnologies.common.parser.OStringParser;
-import com.orientechnologies.common.util.OArrays;
 
 public class OConsoleApplication {
   protected static final String[]   COMMENT_PREFIXS = new String[] { "#", "--", "//" };
@@ -80,9 +80,8 @@ public class OConsoleApplication {
     for (int i = 0; i < m.getParameterAnnotations().length; i++) {
       for (int j = 0; j < m.getParameterAnnotations()[i].length; j++) {
         if (m.getParameterAnnotations()[i][j] instanceof com.orientechnologies.common.console.annotation.ConsoleParameter) {
-          buffer
-              .append(" <"
-                  + ((com.orientechnologies.common.console.annotation.ConsoleParameter) m.getParameterAnnotations()[i][j]).name()
+          buffer.append(
+              " <" + ((com.orientechnologies.common.console.annotation.ConsoleParameter) m.getParameterAnnotations()[i][j]).name()
                   + ">");
         }
       }
@@ -200,7 +199,10 @@ public class OConsoleApplication {
   }
 
   protected boolean executeBatch(final String commandLine) {
-    final File commandFile = new File(commandLine);
+    File commandFile = new File(commandLine);
+    if(!commandFile.isAbsolute()){
+      commandFile = new File(new File("."), commandLine);
+    }
 
     OCommandStream scanner;
     try {
@@ -253,8 +255,8 @@ public class OConsoleApplication {
           final RESULT status = execute(commandLine);
           commandLine = null;
 
-          if (status == RESULT.EXIT || (status == RESULT.ERROR && !Boolean.parseBoolean(properties.get("ignoreErrors")))
-              && iBatchMode)
+          if (status == RESULT.EXIT
+              || (status == RESULT.ERROR && !Boolean.parseBoolean(properties.get("ignoreErrors"))) && iBatchMode)
             return false;
         }
       }
@@ -269,8 +271,8 @@ public class OConsoleApplication {
           }
 
           final RESULT status = execute(commandBuffer.toString());
-          if (status == RESULT.EXIT || (status == RESULT.ERROR && !Boolean.parseBoolean(properties.get("ignoreErrors")))
-              && iBatchMode)
+          if (status == RESULT.EXIT
+              || (status == RESULT.ERROR && !Boolean.parseBoolean(properties.get("ignoreErrors"))) && iBatchMode)
             return false;
         }
       }

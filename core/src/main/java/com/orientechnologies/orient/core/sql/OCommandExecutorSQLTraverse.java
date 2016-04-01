@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  *
  *  *  Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
@@ -128,7 +129,7 @@ public class OCommandExecutorSQLTraverse extends OCommandExecutorSQLResultsetAbs
 
       parserSkipWhiteSpaces();
 
-      if (!parserIsEnded()) {
+      while (!parserIsEnded()) {
         if (parserOptionalKeyword(KEYWORD_LIMIT, KEYWORD_SKIP, KEYWORD_OFFSET, KEYWORD_TIMEOUT, KEYWORD_MAXDEPTH, KEYWORD_STRATEGY)) {
           final String w = parserGetLastWord();
           if (w.equals(KEYWORD_LIMIT))
@@ -149,7 +150,7 @@ public class OCommandExecutorSQLTraverse extends OCommandExecutorSQLResultsetAbs
       else
         traverse.limit(limit);
 
-      traverse.getContext().setChild(iRequest.getContext());
+      traverse.getContext().setParent(iRequest.getContext());
     } finally {
       textRequest.setText(originalQuery);
     }
